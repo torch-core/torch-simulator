@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  simulator: link:../../../../../Library/pnpm/global/5/node_modules/@torch-finance/simulator
-
 importers:
 
   .:
@@ -17,9 +14,6 @@ importers:
       decimal.js:
         specifier: ^10.4.3
         version: 10.4.3
-      simulator:
-        specifier: link:../../../../../Library/pnpm/global/5/node_modules/@torch-finance/simulator
-        version: link:../../../../../Library/pnpm/global/5/node_modules/@torch-finance/simulator
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.11
