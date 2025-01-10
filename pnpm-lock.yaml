@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@torch-finance/core':
         specifier: ^1.1.1
-        version: 1.1.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)
+        version: 1.2.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)
       decimal.js:
         specifier: ^10.4.3
         version: 10.4.3
@@ -767,8 +767,8 @@ packages:
       '@ton/core': '>=0.59.0'
       '@ton/crypto': '>=3.2.0'
 
-  '@torch-finance/core@1.1.1':
-    resolution: {integrity: sha512-DzfYoZbggkTlX2cIpW+zTErDE4CIT7Cfc+Ce3TDDyFI0TVtLE0PmCfijwfhbZc6L2jaX7KSHS3uTHtr1q3vzEA==}
+  '@torch-finance/core@1.2.1':
+    resolution: {integrity: sha512-sITsjWiD6SZq1Cqf392zz0QhfCkTMycVf9vTF8dKfvaWuNB1Ro8Dgm27/wgPjNf+U/U77z+QEu41hGgFX0BKFg==}
     engines: {node: '>=22'}
     peerDependencies:
       '@ton/core': '>=0.59.1'
@@ -3225,7 +3225,7 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@torch-finance/core@1.1.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)':
+  '@torch-finance/core@1.2.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)':
     dependencies:
       '@ton/core': 0.59.1(@ton/crypto@3.3.0)
       '@ton/crypto': 3.3.0
