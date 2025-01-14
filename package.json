@@ -45,10 +45,12 @@
     "@ton/core": "^0.59.1",
     "@ton/crypto": "^3.3.0",
     "@ton/ton": "^15.1.0",
+    "@torch-finance/core": "^1.2.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.5",
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
+    "decimal.js": "^10.4.3",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
@@ -63,8 +65,8 @@
     "typescript-eslint": "^8.19.1",
     "zod": "^3.24.1"
   },
-  "dependencies": {
-    "@torch-finance/core": "^1.1.1",
-    "decimal.js": "^10.4.3"
+  "peerDependencies": {
+    "@torch-finance/core": ">=1.2.1",
+    "decimal.js": ">=10.4.3"
   }
 }

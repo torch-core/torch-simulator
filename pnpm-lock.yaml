@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@torch-finance/core':
-        specifier: ^1.1.1
-        version: 1.2.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)
-      decimal.js:
-        specifier: ^10.4.3
-        version: 10.4.3
     devDependencies:
       '@changesets/cli':
         specifier: ^2.27.11
@@ -30,6 +23,9 @@ importers:
       '@ton/ton':
         specifier: ^15.1.0
         version: 15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)
+      '@torch-finance/core':
+        specifier: ^1.2.1
+        version: 1.2.1(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0)(@ton/ton@15.1.0(@ton/core@0.59.1(@ton/crypto@3.3.0))(@ton/crypto@3.3.0))(zod@3.24.1)
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
@@ -42,6 +38,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.19.1
         version: 8.19.1(eslint@9.17.0)(typescript@5.7.3)
+      decimal.js:
+        specifier: ^10.4.3
+        version: 10.4.3
       eslint:
         specifier: ^9.17.0
         version: 9.17.0
