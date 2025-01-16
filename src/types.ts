@@ -42,10 +42,10 @@ export interface SimulatorState {
   futureA: number;
   initATime: number;
   futureATime: number;
-  balances: Allocation[];
   feeNumerator: number;
   adminFeeNumerator: number;
   adminFees: Allocation[];
+  balances: Allocation[];
   lpTotalSupply: bigint;
   decimals: Allocation[];
   rates?: Allocation[];
@@ -57,8 +57,8 @@ export interface SimulatorSnapshot {
   initATime: number;
   futureATime: number;
   now: number;
-  balances: bigint[];
   adminFees: bigint[];
+  balances: bigint[];
   lpTotalSupply: bigint;
   rates: bigint[];
 }
