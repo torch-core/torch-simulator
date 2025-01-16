@@ -9,7 +9,15 @@ import {
   SimulateSwapParams,
   SimulateWithdrawParams,
 } from './types';
-import { FEE_DENOMINATOR, PRECISION, A_PRECISION, MAX_ITERATIONS } from './constants';
+import {
+  FEE_DENOMINATOR,
+  PRECISION,
+  A_PRECISION,
+  MAX_ITERATIONS,
+  MIN_RAMP_TIME,
+  MAX_A,
+  MAX_A_CHANGE,
+} from './constants';
 import { IPoolSimulator } from './interfaces';
 
 export class PoolSimulator implements IPoolSimulator {
@@ -180,10 +188,18 @@ export class PoolSimulator implements IPoolSimulator {
     }
 
     this.rates = this._setRates(depositParams.rates);
-    return this._addLiquidity(amounts);
+    return this._deposit(amounts);
   }
 
-  _addLiquidity(amounts: bigint[]): SimulatorDepositResult {
+  claimAdminFees(): SimulatorDepositResult {
+    // Convert to bigint[]
+    const depositAmounts = this.adminFees.map((fee) => fee);
+    // init adminFees
+    this.adminFees = Array(this.poolAssetCount).fill(BigInt(0));
+    return this._deposit(depositAmounts);
+  }
+
+  _deposit(amounts: bigint[]): SimulatorDepositResult {
     const _fee = (BigInt(this.feeNumerator) * BigInt(this.poolAssetCount)) / (4n * (BigInt(this.poolAssetCount) - 1n));
     const _adminFee = BigInt(this.adminFeeNumerator);
     const _rates = this.rates;
@@ -326,10 +342,10 @@ export class PoolSimulator implements IPoolSimulator {
       throw new Error('Asset not found');
     }
     this.rates = this._setRates(swapParams.rates);
-    return this._exchange(i, j, swapParams.amount);
+    return this._swap(i, j, swapParams.amount);
   }
 
-  _exchange(i: number, j: number, _dx: bigint): SimulatorSwapResult {
+  _swap(i: number, j: number, _dx: bigint): SimulatorSwapResult {
     const vpBefore = this.getVirtualPrice();
     const oldBalances = this.balances.slice();
     const _rates = this.rates;
@@ -452,6 +468,53 @@ export class PoolSimulator implements IPoolSimulator {
     const x = this.getY(j, i, yAfterTrade, xp);
     const dx = ((x - xp[i]) * PRECISION) / this.rates[i];
     return dx;
+  }
+
+  // Function to ramp A
+  rampA(futureA: number, futureATime: number, nowBeforeRampA: number): void {
+    const now = nowBeforeRampA;
+
+    // Check ramp time
+    if (now < this.initATime + MIN_RAMP_TIME) {
+      throw new Error('Invalid ramp time: too early to start ramp');
+    }
+    if (futureATime < now + MIN_RAMP_TIME) {
+      throw new Error('Invalid ramp time: future A time is too soon');
+    }
+
+    const initA = this.getA();
+    const futureAPrecision = BigInt(futureA) * A_PRECISION;
+
+    // Check ramp A
+    if (futureA <= 0n || futureA >= MAX_A) {
+      throw new Error('Invalid ramp A: value out of bounds');
+    }
+
+    if (futureA < initA) {
+      if (futureAPrecision * MAX_A_CHANGE < BigInt(initA)) {
+        throw new Error('Invalid ramp A: decreasing too fast');
+      }
+    } else if (futureAPrecision > initA * MAX_A_CHANGE) {
+      throw new Error('Invalid ramp A: increasing too fast');
+    }
+
+    // Update pool A parameters
+    this.initA = Number(initA);
+    this.futureA = Number(futureAPrecision);
+    this.initATime = now;
+    this.futureATime = futureATime;
+  }
+
+  // Method to stop ramp A
+  stopRampA(now: number): void {
+    this.now = now;
+    const currentA = this.getA();
+
+    // Set current A as both init_A and future_A to stop the ramp
+    this.initA = Number(currentA);
+    this.futureA = Number(currentA);
+    this.initATime = now;
+    this.futureATime = now;
   }
 
   saveSnapshot(): SimulatorSnapshot {
