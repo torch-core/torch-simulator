@@ -13,9 +13,9 @@ import { FEE_DENOMINATOR, PRECISION, A_PRECISION, MAX_ITERATIONS } from './const
 import { IPoolSimulator } from './interfaces';
 
 export class PoolSimulator implements IPoolSimulator {
-  A: number;
   assets: Asset[];
   assetIndexes: Map<string, number>;
+  initA: number;
   futureA: number;
   initATime: number;
   futureATime: number;
@@ -31,50 +31,36 @@ export class PoolSimulator implements IPoolSimulator {
   decimals: number[];
 
   constructor(
-    A: number,
+    initA: number,
     decimals: Allocation[],
     feeNumerator: number,
     adminFeeNumerator: number,
     rates?: Allocation[],
   ) {
-    // Sort assets
-    decimals.sort((a, b) => a.asset.compare(b.asset));
     this.poolAssetCount = decimals.length;
-    this.A = A;
-    this.futureA = A;
+    this.initA = initA;
+    this.futureA = initA;
     this.initATime = 0;
     this.futureATime = 0;
     this.now = Math.floor(Date.now() / 1000);
-
     this.feeNumerator = feeNumerator;
     this.adminFeeNumerator = adminFeeNumerator;
-    this.decimals = decimals.map((d) => Number(d.amount));
+    this.decimals = decimals.sort((a, b) => a.asset.compare(b.asset)).map((d) => Number(d.amount));
     this.precisionMultipliers = this.decimals.map((d) => 10n ** BigInt(18 - d));
-
-    // Initialize rates
     this.rates = this._setRates(rates);
-
     this.assets = decimals.map((d) => d.asset);
-
     this.assetIndexes = new Map();
     this.assets.forEach((asset, index) => {
       this.assetIndexes.set(asset.ID, index);
     });
-
     this.balances = Array(this.poolAssetCount).fill(BigInt(0));
     this.adminFees = Array(this.poolAssetCount).fill(BigInt(0));
-
     this.lpTotalSupply = 0n;
   }
 
   static create(state: SimulatorState): PoolSimulator {
     // Create a new pool simulator
-    const simulator = new PoolSimulator(
-      state.initA,
-      state.assetsAndDecimals,
-      state.feeNumerator,
-      state.adminFeeNumerator,
-    );
+    const simulator = new PoolSimulator(state.initA, state.decimals, state.feeNumerator, state.adminFeeNumerator);
 
     // Set custom parameters
     simulator.futureA = state.futureA;
@@ -86,9 +72,9 @@ export class PoolSimulator implements IPoolSimulator {
     simulator.balances = state.balances.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.adminFees = state.adminFees.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.lpTotalSupply = state.lpTotalSupply;
-    simulator.assets = state.assetsAndDecimals.sort((a, b) => a.asset.compare(b.asset)).map((d) => d.asset);
+    simulator.assets = state.decimals.sort((a, b) => a.asset.compare(b.asset)).map((d) => d.asset);
     simulator.assetIndexes = new Map();
-    state.assetsAndDecimals.forEach((asset, index) => {
+    state.decimals.forEach((asset, index) => {
       simulator.assetIndexes.set(asset.asset.ID, index);
     });
     return simulator;
@@ -109,7 +95,7 @@ export class PoolSimulator implements IPoolSimulator {
       // Ramp is still in progress
       const t0 = BigInt(this.initATime);
       const t1 = BigInt(this.futureATime);
-      const A0 = BigInt(this.A);
+      const A0 = BigInt(this.initA);
       const A1 = BigInt(this.futureA);
 
       if (A1 > A0) {
@@ -472,7 +458,7 @@ export class PoolSimulator implements IPoolSimulator {
 
   saveSnapshot(): SimulatorSnapshot {
     return {
-      A: this.A,
+      initA: this.initA,
       futureA: this.futureA,
       initATime: this.initATime,
       futureATime: this.futureATime,
@@ -485,7 +471,7 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   restoreSnapshot(state: SimulatorSnapshot): void {
-    this.A = state.A;
+    this.initA = state.initA;
     this.futureA = state.futureA;
     this.initATime = state.initATime;
     this.futureATime = state.futureATime;

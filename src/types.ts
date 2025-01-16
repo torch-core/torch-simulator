@@ -47,12 +47,12 @@ export interface SimulatorState {
   adminFeeNumerator: number;
   adminFees: Allocation[];
   lpTotalSupply: bigint;
-  assetsAndDecimals: Allocation[];
+  decimals: Allocation[];
   rates?: Allocation[];
 }
 
 export interface SimulatorSnapshot {
-  A: number;
+  initA: number;
   futureA: number;
   initATime: number;
   futureATime: number;
