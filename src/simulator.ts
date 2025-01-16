@@ -75,7 +75,7 @@ export class PoolSimulator implements IPoolSimulator {
     simulator.initATime = state.initATime;
     simulator.futureATime = state.futureATime;
     simulator.rates = state.rates ? simulator._setRates(state.rates) : simulator.rates;
-    simulator.balances = state.balances.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
+    simulator.balances = state.reserves.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.adminFees = state.adminFees.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.lpTotalSupply = state.lpTotalSupply;
     simulator.assets = state.decimals.sort((a, b) => a.asset.compare(b.asset)).map((d) => d.asset);
@@ -86,12 +86,20 @@ export class PoolSimulator implements IPoolSimulator {
     return simulator;
   }
 
-  _setRates(rates: Allocation[] | undefined): bigint[] {
+  private _setRates(rates: Allocation[] | undefined): bigint[] {
     if (rates === undefined) {
       return this.decimals.map((d) => 10n ** BigInt(36 - d));
     }
     rates.sort((a, b) => a.asset.compare(b.asset));
     return rates.map((rate) => rate.amount);
+  }
+
+  private _xp(_rates: bigint[]): bigint[] {
+    return this.balances.map((x, index) => (x * _rates[index]) / PRECISION);
+  }
+
+  private _xp_mem(_balances: bigint[], _rates: bigint[]): bigint[] {
+    return _balances.map((x, index) => (x * _rates[index]) / PRECISION);
   }
 
   getA(): bigint {
@@ -117,15 +125,7 @@ export class PoolSimulator implements IPoolSimulator {
     return expectedA;
   }
 
-  _xp(_rates: bigint[]): bigint[] {
-    return this.balances.map((x, index) => (x * _rates[index]) / PRECISION);
-  }
-
-  _xp_mem(_balances: bigint[], _rates: bigint[]): bigint[] {
-    return _balances.map((x, index) => (x * _rates[index]) / PRECISION);
-  }
-
-  _get_index(asset: Asset): number {
+  get_index(asset: Asset): number {
     const index = this.assetIndexes.get(asset.ID);
     if (index === undefined) {
       throw new Error('Asset not found');
@@ -180,7 +180,7 @@ export class PoolSimulator implements IPoolSimulator {
   deposit(depositParams: SimulateDepositParams): SimulatorDepositResult {
     const amounts: bigint[] = Array(this.poolAssetCount).fill(0n);
     for (let i = 0; i < depositParams.depositAmounts.length; i++) {
-      const index = this._get_index(depositParams.depositAmounts[i].asset);
+      const index = this.get_index(depositParams.depositAmounts[i].asset);
       if (index === undefined) {
         throw new Error('Asset not found');
       }
@@ -199,7 +199,7 @@ export class PoolSimulator implements IPoolSimulator {
     return this._deposit(depositAmounts);
   }
 
-  _deposit(amounts: bigint[]): SimulatorDepositResult {
+  private _deposit(amounts: bigint[]): SimulatorDepositResult {
     const _fee = (BigInt(this.feeNumerator) * BigInt(this.poolAssetCount)) / (4n * (BigInt(this.poolAssetCount) - 1n));
     const _adminFee = BigInt(this.adminFeeNumerator);
     const _rates = this.rates;
@@ -336,8 +336,8 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   swap(swapParams: SimulateSwapParams) {
-    const i = this._get_index(swapParams.assetIn);
-    const j = this._get_index(swapParams.assetOut);
+    const i = this.get_index(swapParams.assetIn);
+    const j = this.get_index(swapParams.assetOut);
     if (i === undefined || j === undefined) {
       throw new Error('Asset not found');
     }
@@ -345,7 +345,7 @@ export class PoolSimulator implements IPoolSimulator {
     return this._swap(i, j, swapParams.amount);
   }
 
-  _swap(i: number, j: number, _dx: bigint): SimulatorSwapResult {
+  private _swap(i: number, j: number, _dx: bigint): SimulatorSwapResult {
     const vpBefore = this.getVirtualPrice();
     const oldBalances = this.balances.slice();
     const _rates = this.rates;
@@ -382,7 +382,7 @@ export class PoolSimulator implements IPoolSimulator {
     return this._withdrawOne(withdrawParams.lpAmount, withdrawParams.assetOut!);
   }
 
-  _withdrawBalanced(_amount: bigint): SimulateWithdrawResult {
+  private _withdrawBalanced(_amount: bigint): SimulateWithdrawResult {
     const totalSupply = this.lpTotalSupply;
     const amount = _amount;
     const vpBefore = this.getVirtualPrice();
@@ -403,8 +403,8 @@ export class PoolSimulator implements IPoolSimulator {
     };
   }
 
-  _withdrawOne(_amount: bigint, target: Asset): SimulateWithdrawResult {
-    const i = this._get_index(target);
+  private _withdrawOne(_amount: bigint, target: Asset): SimulateWithdrawResult {
+    const i = this.get_index(target);
     if (i === undefined) {
       throw new Error('Asset not found');
     }
@@ -452,8 +452,8 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   swapExactOut(swapExactOutParams: SimulateSwapParams): bigint {
-    const i = this._get_index(swapExactOutParams.assetIn);
-    const j = this._get_index(swapExactOutParams.assetOut);
+    const i = this.get_index(swapExactOutParams.assetIn);
+    const j = this.get_index(swapExactOutParams.assetOut);
     if (i === undefined || j === undefined) {
       throw new Error('Asset not found');
     }
@@ -489,7 +489,6 @@ export class PoolSimulator implements IPoolSimulator {
     if (futureA <= 0n || futureA >= MAX_A) {
       throw new Error('Invalid ramp A: value out of bounds');
     }
-
     if (futureA < initA) {
       if (futureAPrecision * MAX_A_CHANGE < BigInt(initA)) {
         throw new Error('Invalid ramp A: decreasing too fast');
@@ -524,7 +523,7 @@ export class PoolSimulator implements IPoolSimulator {
       initATime: this.initATime,
       futureATime: this.futureATime,
       now: this.now,
-      balances: this.balances,
+      reserves: this.balances,
       adminFees: this.adminFees,
       lpTotalSupply: this.lpTotalSupply,
       rates: this.rates,
@@ -537,7 +536,7 @@ export class PoolSimulator implements IPoolSimulator {
     this.initATime = state.initATime;
     this.futureATime = state.futureATime;
     this.now = state.now;
-    this.balances = state.balances;
+    this.balances = state.reserves;
     this.adminFees = state.adminFees;
     this.lpTotalSupply = state.lpTotalSupply;
     this.rates = state.rates;
