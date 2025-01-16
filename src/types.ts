@@ -1,4 +1,4 @@
-import { Allocation, Asset } from "@torch-finance/core";
+import { Allocation, Asset } from '@torch-finance/core';
 
 export type SimulateDepositParams = {
   depositAmounts: Allocation[]; // amount of tokens to be deposited
