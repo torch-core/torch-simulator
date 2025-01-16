@@ -1,29 +1,40 @@
-import { Asset } from '@torch-finance/core';
-import { Decimal as DecimalType } from 'decimal.js';
+import { Allocation, Asset } from "@torch-finance/core";
 
-export type SimulatorDeposit = {
-  lpAmount: DecimalType;
-  vpBefore: DecimalType;
-  vpAfter: DecimalType;
-  adminFeesDiff: DecimalType[];
+export type SimulateDepositParams = {
+  depositAmounts: Allocation[]; // amount of tokens to be deposited
+  rates?: Allocation[]; // external rates for yield bearing stable pool
 };
 
-export type SimulatorSwap = {
-  amountOut: DecimalType;
-  vpBefore: DecimalType;
-  vpAfter: DecimalType;
+export type SimulatorDepositResult = {
+  lpTokenOut: bigint;
+  virtualPriceBefore: bigint;
+  virtualPriceAfter: bigint;
+  lpTotalSupply: bigint;
 };
 
-export type SimulateWithdraw = {
-  amountOuts: DecimalType[];
-  vpBefore: DecimalType;
-  vpAfter: DecimalType;
+export type SimulateSwapParams = {
+  assetIn: Asset;
+  assetOut: Asset;
+  amount: bigint;
+  rates?: Allocation[];
 };
 
-export type SimulateWithdrawOne = {
-  amountOut: DecimalType;
-  vpBefore: DecimalType;
-  vpAfter: DecimalType;
+export type SimulatorSwapResult = {
+  amountOut: bigint;
+  virtualPriceBefore: bigint;
+  virtualPriceAfter: bigint;
+};
+
+export type SimulateWithdrawParams = {
+  lpAmount: bigint;
+  assetOut?: Asset;
+  rates?: Allocation[];
+};
+
+export type SimulateWithdrawResult = {
+  amountOuts: bigint[];
+  virtualPriceBefore: bigint;
+  virtualPriceAfter: bigint;
 };
 
 export interface SimulatorState {
@@ -31,25 +42,23 @@ export interface SimulatorState {
   futureA: number;
   initATime: number;
   futureATime: number;
-  now: number;
-  n: number;
-  rates: bigint[];
-  balances: bigint[];
-  fee: bigint;
-  adminFee: bigint;
-  adminFees: bigint[];
-  totalSupply: bigint;
-  assets: Asset[];
-  decimals: number[];
+  balances: Allocation[];
+  feeNumerator: number;
+  adminFeeNumerator: number;
+  adminFees: Allocation[];
+  lpTotalSupply: bigint;
+  assetsAndDecimals: Allocation[];
+  rates?: Allocation[];
 }
 
 export interface SimulatorSnapshot {
-  A: DecimalType;
-  futureA: DecimalType;
-  initATime: DecimalType;
-  futureATime: DecimalType;
-  now: DecimalType;
-  balances: string[];
-  adminFees: string[];
-  totalSupply: string;
+  A: number;
+  futureA: number;
+  initATime: number;
+  futureATime: number;
+  now: number;
+  balances: bigint[];
+  adminFees: bigint[];
+  lpTotalSupply: bigint;
+  rates: bigint[];
 }
