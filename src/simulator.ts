@@ -66,9 +66,7 @@ export class PoolSimulator implements IPoolSimulator {
     simulator.futureA = state.futureA;
     simulator.initATime = state.initATime;
     simulator.futureATime = state.futureATime;
-    if (state.rates) {
-      simulator.rates = simulator._setRates(state.rates);
-    }
+    simulator.rates = state.rates ? simulator._setRates(state.rates) : simulator.rates;
     simulator.balances = state.balances.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.adminFees = state.adminFees.sort((a, b) => a.asset.compare(b.asset)).map((b) => b.amount);
     simulator.lpTotalSupply = state.lpTotalSupply;
