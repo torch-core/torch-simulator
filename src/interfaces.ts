@@ -10,14 +10,14 @@ import {
 } from './types';
 
 export interface IPoolSimulator {
-  getA(): bigint;
-  get_index(asset: Asset): number;
-  getD(xp: bigint[], amp: bigint): bigint;
-  getD_mem(_balances: bigint[], _rates: bigint[], amp: bigint): bigint;
+  getA(): number;
+  getIndex(asset: Asset): number;
+  getD(xp: bigint[], amp: number): bigint;
+  getDMem(balances: bigint[], rates: bigint[], amp: number): bigint;
   getVirtualPrice(): bigint;
-  getY(i: number, j: number, x: bigint, xp_: bigint[]): bigint;
+  getY(i: number, j: number, x: bigint, xp: bigint[]): bigint;
   getYD(i: number, xp: bigint[], d: bigint): bigint;
-  dy(i: number, j: number, dx: bigint, _rates: bigint[]): bigint;
+  dy(i: number, j: number, dx: bigint, rates: bigint[]): bigint;
   deposit(depositParams: SimulateDepositParams): SimulatorDepositResult;
   swap(swapParams: SimulateSwapParams): SimulatorSwapResult;
   withdraw(withdrawParams: SimulateWithdrawParams): SimulateWithdrawResult;
