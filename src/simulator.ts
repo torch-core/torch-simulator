@@ -451,7 +451,7 @@ export class PoolSimulator implements IPoolSimulator {
     };
   }
 
-  getSwapExactOut(swapExactOutParams: SimulateSwapParams): bigint {
+  swapExactOut(swapExactOutParams: SimulateSwapParams): bigint {
     const i = this._get_index(swapExactOutParams.assetIn);
     const j = this._get_index(swapExactOutParams.assetOut);
     if (i === undefined || j === undefined) {
