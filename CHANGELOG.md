@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.2.1
+
+### Patch Changes
+
+- 62e66b3: Added a `rates` input parameter to `getVirtualPrice`, allowing users to set a custom rates and view the corresponding virtual price.
+
 ## 0.2.0
 
 ### Minor Changes
