@@ -81,11 +81,10 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   private _setRates(rates?: Allocation[]): bigint[] {
-    if (rates === undefined) {
-      return this.decimals.map((d) => 10n ** BigInt(36 - d));
+    if (!rates) {
+      return this.rates || this.decimals.map((d) => 10n ** BigInt(36 - d));
     }
-    rates.sort((a, b) => a.compare(b));
-    return rates.map((rate) => rate.value);
+    return rates.sort((a, b) => a.compare(b)).map((rate) => rate.value);
   }
 
   private _xp(rates: bigint[]): bigint[] {
