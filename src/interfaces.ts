@@ -1,4 +1,4 @@
-import { Asset } from '@torch-finance/core';
+import { Allocation, Asset } from '@torch-finance/core';
 import {
   SimulatorDepositResult,
   SimulatorSwapResult,
@@ -14,7 +14,7 @@ export interface IPoolSimulator {
   getIndex(asset: Asset): number;
   getD(xp: bigint[], amp: number): bigint;
   getDMem(balances: bigint[], rates: bigint[], amp: number): bigint;
-  getVirtualPrice(): bigint;
+  getVirtualPrice(rates?: Allocation[] | null): bigint;
   getY(i: number, j: number, x: bigint, xp: bigint[]): bigint;
   getYD(i: number, xp: bigint[], d: bigint): bigint;
   dy(i: number, j: number, dx: bigint, rates: bigint[]): bigint;
