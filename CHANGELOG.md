@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.2.3
+
+### Patch Changes
+
+- 32f39db: When claiming the admin fee, specific rates can be provided. If none are specified, the simulator's existing rate will be used for the deposit.
+
 ## 0.2.2
 
 ### Patch Changes
