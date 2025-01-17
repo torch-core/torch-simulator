@@ -161,9 +161,9 @@ export class PoolSimulator implements IPoolSimulator {
     return this.getD(this._xpMem(balances, rates), amp);
   }
 
-  getVirtualPrice(): bigint {
-    const _rates = this.rates;
-    const D = this.getD(this._xp(_rates), this.getA());
+  getVirtualPrice(rates?: Allocation[]): bigint {
+    this.rates = this._setRates(rates);
+    const D = this.getD(this._xp(this.rates), this.getA());
     const totalSupply = this.lpTotalSupply;
     if (totalSupply === 0n) {
       return 0n;
