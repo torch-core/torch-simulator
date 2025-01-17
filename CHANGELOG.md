@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.2.2
+
+### Patch Changes
+
+- bfbea37: When calling `_setRates()`, if no rates are specified and the simulator already has a rate, it will return directly. Otherwise, it will calculate a default set of rates using decimals.
+
 ## 0.2.1
 
 ### Patch Changes
