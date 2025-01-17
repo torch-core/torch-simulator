@@ -21,7 +21,7 @@ export interface IPoolSimulator {
   deposit(depositParams: SimulateDepositParams): SimulatorDepositResult;
   swap(swapParams: SimulateSwapParams): SimulatorSwapResult;
   withdraw(withdrawParams: SimulateWithdrawParams): SimulateWithdrawResult;
-  claimAdminFees(): SimulatorDepositResult;
+  claimAdminFees(rates?: Allocation[]): SimulatorDepositResult;
   rampA(futureA: number, futureATime: number, nowBeforeRampA: number): void;
   stopRampA(now: number): void;
   swapExactOut(swapExactOutParams: SimulateSwapParams): bigint;

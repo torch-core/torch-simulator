@@ -181,8 +181,10 @@ export class PoolSimulator implements IPoolSimulator {
     return this._deposit(amounts);
   }
 
-  claimAdminFees(): SimulatorDepositResult {
-    // Convert to bigint[]
+  claimAdminFees(rates?: Allocation[]): SimulatorDepositResult {
+    this.rates = this._setRates(rates);
+
+    // Convert admin fees to deposit
     const depositAmounts = this.adminFees.map((fee) => fee);
     // init adminFees
     this.adminFees = Array(this.poolAssetCount).fill(BigInt(0));
