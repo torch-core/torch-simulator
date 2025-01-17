@@ -7,5 +7,5 @@ This is the SDK for @torch-finance/simulator.
 To start using this SDK:
 
 ```bash
-pnpm install @torch-finance/core decimal.js @torch-finance/simulator
+pnpm install @torch-finance/core @torch-finance/simulator
 ```
