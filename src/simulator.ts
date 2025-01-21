@@ -376,6 +376,7 @@ export class PoolSimulator implements IPoolSimulator {
     const j = this.getIndex(swapExactOutParams.assetOut);
 
     this.rates = this._setRates(swapExactOutParams.rates);
+    const vpBefore = this.getVirtualPrice();
 
     const xp = this._xp(this.rates);
     const _dy = swapExactOutParams.amountOut;
@@ -384,11 +385,21 @@ export class PoolSimulator implements IPoolSimulator {
 
     const x = this.getY(j, i, yAfterTrade, xp);
     const dx = ((x - xp[i]) * PRECISION) / this.rates[i];
+
+    // Use swap exact out result to swap exact in to simulate and get virtual price after
+    const vpAfter = this._swapExactIn({
+      mode: 'ExactIn',
+      assetIn: swapExactOutParams.assetIn,
+      assetOut: swapExactOutParams.assetOut,
+      amountIn: dx,
+      rates: swapExactOutParams.rates,
+    }).virtualPriceAfter;
+
     return {
       mode: 'ExactOut',
       amountIn: dx,
-      virtualPriceAfter: 0n,
-      virtualPriceBefore: 0n,
+      virtualPriceBefore: vpBefore,
+      virtualPriceAfter: vpAfter,
     };
   }
 
@@ -519,6 +530,8 @@ export class PoolSimulator implements IPoolSimulator {
       futureA: this.futureA,
       initATime: this.initATime,
       futureATime: this.futureATime,
+      feeNumerator: this.feeNumerator,
+      adminFeeNumerator: this.adminFeeNumerator,
       now: this.now,
       reserves: this.balances,
       adminFees: this.adminFees,
@@ -532,6 +545,8 @@ export class PoolSimulator implements IPoolSimulator {
     this.futureA = state.futureA;
     this.initATime = state.initATime;
     this.futureATime = state.futureATime;
+    this.feeNumerator = state.feeNumerator;
+    this.adminFeeNumerator = state.adminFeeNumerator;
     this.now = state.now;
     this.balances = state.reserves;
     this.adminFees = state.adminFees;

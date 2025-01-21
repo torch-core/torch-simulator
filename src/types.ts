@@ -1,12 +1,15 @@
 import { Allocation } from '@torch-finance/core';
 
-export interface SimulatorState {
+interface SimulatorConfig {
   initA: number; // initial amplification coefficient
   futureA: number; // future amplification coefficient
   initATime: number; // initial time of amplification coefficient
   futureATime: number; // future time of amplification coefficient
   feeNumerator: number; // fee numerator
   adminFeeNumerator: number; // admin fee numerator
+}
+
+export interface SimulatorState extends SimulatorConfig {
   adminFees: Allocation[]; // admin fees
   reserves: Allocation[]; // reserves
   lpTotalSupply: bigint; // total supply of lp tokens
@@ -14,11 +17,7 @@ export interface SimulatorState {
   rates?: Allocation[]; // external rates for yield bearing stable pool
 }
 
-export interface SimulatorSnapshot {
-  initA: number; // initial amplification coefficient
-  futureA: number; // future amplification coefficient
-  initATime: number; // initial time of amplification coefficient
-  futureATime: number; // future time of amplification coefficient
+export interface SimulatorSnapshot extends SimulatorConfig {
   now: number; // current time
   adminFees: bigint[]; // admin fees
   reserves: bigint[]; // reserves
