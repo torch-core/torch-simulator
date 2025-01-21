@@ -1,14 +1,5 @@
 import { Allocation, Asset } from '@torch-finance/core';
-import {
-  SimulatorState,
-  SimulateWithdrawResult,
-  SimulatorDepositResult,
-  SimulatorSwapResult,
-  SimulatorSnapshot,
-  SimulateDepositParams,
-  SimulateSwapParams,
-  SimulateWithdrawParams,
-} from './types';
+import { SimulatorState, SimulatorSnapshot } from './types';
 import {
   FEE_DENOMINATOR,
   PRECISION,
@@ -19,6 +10,18 @@ import {
   MAX_A_CHANGE,
 } from './constants';
 import { IPoolSimulator } from './interfaces';
+import {
+  SimualateSwapExactOutResult,
+  SimulateDepositParams,
+  SimulateDepositResult,
+  SimulateSwapExactInParams,
+  SimulateSwapExactInResult,
+  SimulateSwapExactOutParams,
+  SimulateSwapParams,
+  SimulateSwapResult,
+  SimulateWithdrawParams,
+  SimulateWithdrawResult,
+} from '@torch-finance/dex-contract-wrapper';
 
 export class PoolSimulator implements IPoolSimulator {
   assets: Asset[];
@@ -170,7 +173,7 @@ export class PoolSimulator implements IPoolSimulator {
     return (D * PRECISION) / totalSupply;
   }
 
-  deposit(depositParams: SimulateDepositParams): SimulatorDepositResult {
+  deposit(depositParams: SimulateDepositParams): SimulateDepositResult {
     const amounts: bigint[] = Array(this.poolAssetCount).fill(0n);
     for (let i = 0; i < depositParams.depositAmounts.length; i++) {
       const index = this.getIndex(depositParams.depositAmounts[i].asset);
@@ -181,7 +184,7 @@ export class PoolSimulator implements IPoolSimulator {
     return this._deposit(amounts);
   }
 
-  claimAdminFees(rates?: Allocation[]): SimulatorDepositResult {
+  claimAdminFees(rates?: Allocation[]): SimulateDepositResult {
     this.rates = this._setRates(rates);
 
     // Convert admin fees to deposit
@@ -191,7 +194,7 @@ export class PoolSimulator implements IPoolSimulator {
     return this._deposit(depositAmounts);
   }
 
-  private _deposit(amounts: bigint[]): SimulatorDepositResult {
+  private _deposit(amounts: bigint[]): SimulateDepositResult {
     const _fee = (BigInt(this.feeNumerator) * BigInt(this.poolAssetCount)) / (4n * (BigInt(this.poolAssetCount) - 1n));
     const _adminFee = BigInt(this.adminFeeNumerator);
     const _rates = this.rates;
@@ -327,20 +330,23 @@ export class PoolSimulator implements IPoolSimulator {
     return dy - _fee;
   }
 
-  swap(swapParams: SimulateSwapParams) {
+  swap(swapParams: SimulateSwapParams): SimulateSwapResult {
+    if (swapParams.mode === 'ExactIn') {
+      return this._swapExactIn(swapParams);
+    }
+    return this._swapExactOut(swapParams);
+  }
+
+  private _swapExactIn(swapParams: SimulateSwapExactInParams): SimulateSwapExactInResult {
     const i = this.getIndex(swapParams.assetIn);
     const j = this.getIndex(swapParams.assetOut);
 
     this.rates = this._setRates(swapParams.rates);
-    return this._swap(i, j, swapParams.amount);
-  }
-
-  private _swap(i: number, j: number, _dx: bigint): SimulatorSwapResult {
     const vpBefore = this.getVirtualPrice();
     const oldBalances = this.balances.slice();
     const _rates = this.rates;
     const xp = this._xpMem(oldBalances, _rates);
-    const dx = _dx;
+    const dx = swapParams.amountIn;
     const x = xp[i] + (dx * _rates[i]) / PRECISION;
     const y = this.getY(i, j, x, xp);
 
@@ -358,9 +364,31 @@ export class PoolSimulator implements IPoolSimulator {
     const vpAfter = this.getVirtualPrice();
 
     return {
+      mode: 'ExactIn',
       amountOut: dy,
       virtualPriceBefore: vpBefore,
       virtualPriceAfter: vpAfter,
+    };
+  }
+
+  private _swapExactOut(swapExactOutParams: SimulateSwapExactOutParams): SimualateSwapExactOutResult {
+    const i = this.getIndex(swapExactOutParams.assetIn);
+    const j = this.getIndex(swapExactOutParams.assetOut);
+
+    this.rates = this._setRates(swapExactOutParams.rates);
+
+    const xp = this._xp(this.rates);
+    const _dy = swapExactOutParams.amountOut;
+    const yAfterTrade =
+      xp[j] - (((_dy * this.rates[j]) / PRECISION) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - BigInt(this.feeNumerator));
+
+    const x = this.getY(j, i, yAfterTrade, xp);
+    const dx = ((x - xp[i]) * PRECISION) / this.rates[i];
+    return {
+      mode: 'ExactOut',
+      amountIn: dx,
+      virtualPriceAfter: 0n,
+      virtualPriceBefore: 0n,
     };
   }
 
@@ -437,22 +465,6 @@ export class PoolSimulator implements IPoolSimulator {
       virtualPriceBefore: vpBefore,
       virtualPriceAfter: vpAfter,
     };
-  }
-
-  swapExactOut(swapExactOutParams: SimulateSwapParams): bigint {
-    const i = this.getIndex(swapExactOutParams.assetIn);
-    const j = this.getIndex(swapExactOutParams.assetOut);
-
-    this.rates = this._setRates(swapExactOutParams.rates);
-
-    const xp = this._xp(this.rates);
-    const _dy = swapExactOutParams.amount;
-    const yAfterTrade =
-      xp[j] - (((_dy * this.rates[j]) / PRECISION) * FEE_DENOMINATOR) / (FEE_DENOMINATOR - BigInt(this.feeNumerator));
-
-    const x = this.getY(j, i, yAfterTrade, xp);
-    const dx = ((x - xp[i]) * PRECISION) / this.rates[i];
-    return dx;
   }
 
   // Function to ramp A

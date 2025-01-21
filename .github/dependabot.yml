@@ -6,3 +6,4 @@ updates:
       interval: 'daily'
     allow:
       - dependency-name: '@torch-finance/core'
+      - dependency-name: '@torch-finance/dex-contract-wrapper'
