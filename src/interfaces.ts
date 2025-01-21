@@ -1,13 +1,13 @@
 import { Allocation, Asset } from '@torch-finance/core';
 import {
-  SimulatorDepositResult,
-  SimulatorSwapResult,
-  SimulateWithdrawResult,
-  SimulatorSnapshot,
   SimulateDepositParams,
+  SimulateDepositResult,
   SimulateSwapParams,
+  SimulateSwapResult,
   SimulateWithdrawParams,
-} from './types';
+  SimulateWithdrawResult,
+} from '@torch-finance/dex-contract-wrapper';
+import { SimulatorSnapshot } from './types';
 
 export interface IPoolSimulator {
   getA(): number;
@@ -18,13 +18,12 @@ export interface IPoolSimulator {
   getY(i: number, j: number, x: bigint, xp: bigint[]): bigint;
   getYD(i: number, xp: bigint[], d: bigint): bigint;
   dy(i: number, j: number, dx: bigint, rates: bigint[]): bigint;
-  deposit(depositParams: SimulateDepositParams): SimulatorDepositResult;
-  swap(swapParams: SimulateSwapParams): SimulatorSwapResult;
+  deposit(depositParams: SimulateDepositParams): SimulateDepositResult;
+  swap(swapParams: SimulateSwapParams): SimulateSwapResult;
   withdraw(withdrawParams: SimulateWithdrawParams): SimulateWithdrawResult;
-  claimAdminFees(rates?: Allocation[]): SimulatorDepositResult;
+  claimAdminFees(rates?: Allocation[]): SimulateDepositResult;
   rampA(futureA: number, futureATime: number, nowBeforeRampA: number): void;
   stopRampA(now: number): void;
-  swapExactOut(swapExactOutParams: SimulateSwapParams): bigint;
   saveSnapshot(): SimulatorSnapshot;
   restoreSnapshot(state: SimulatorSnapshot): void;
 }
