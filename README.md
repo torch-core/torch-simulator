@@ -8,5 +8,5 @@ To start using this SDK:
 
 ```bash
 pnpm install @torch-finance/core @torch-finance/dex-contract-wrapper
-pnpm install@torch-finance/simulator
+pnpm install @torch-finance/simulator
 ```
