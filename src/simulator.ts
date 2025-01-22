@@ -11,12 +11,12 @@ import {
 } from './constants';
 import { IPoolSimulator } from './interfaces';
 import {
-  SimualateSwapExactOutResult,
   SimulateDepositParams,
   SimulateDepositResult,
   SimulateSwapExactInParams,
   SimulateSwapExactInResult,
   SimulateSwapExactOutParams,
+  SimulateSwapExactOutResult,
   SimulateSwapParams,
   SimulateSwapResult,
   SimulateWithdrawParams,
@@ -371,7 +371,7 @@ export class PoolSimulator implements IPoolSimulator {
     };
   }
 
-  private _swapExactOut(swapExactOutParams: SimulateSwapExactOutParams): SimualateSwapExactOutResult {
+  private _swapExactOut(swapExactOutParams: SimulateSwapExactOutParams): SimulateSwapExactOutResult {
     const i = this.getIndex(swapExactOutParams.assetIn);
     const j = this.getIndex(swapExactOutParams.assetOut);
 
