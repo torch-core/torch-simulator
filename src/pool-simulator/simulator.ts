@@ -1,5 +1,5 @@
 import { Allocation, Asset } from '@torch-finance/core';
-import { SimulatorState, SimulatorSnapshot } from './types';
+import { SimulatorState, SimulatorSnapshot } from '../types';
 import {
   FEE_DENOMINATOR,
   PRECISION,
@@ -8,15 +8,15 @@ import {
   MIN_RAMP_TIME,
   MAX_A,
   MAX_A_CHANGE,
-} from './constants';
-import { IPoolSimulator } from './interfaces';
+} from '../constants';
+import { IPoolSimulator } from '../interfaces';
 import {
+  SimulateSwapExactOutResult,
   SimulateDepositParams,
   SimulateDepositResult,
   SimulateSwapExactInParams,
   SimulateSwapExactInResult,
   SimulateSwapExactOutParams,
-  SimulateSwapExactOutResult,
   SimulateSwapParams,
   SimulateSwapResult,
   SimulateWithdrawParams,
@@ -24,6 +24,7 @@ import {
 } from '@torch-finance/dex-contract-wrapper';
 
 export class PoolSimulator implements IPoolSimulator {
+  poolAddress: string;
   assets: Asset[];
   assetIndexes: Map<string, number>;
   initA: number;
@@ -42,12 +43,14 @@ export class PoolSimulator implements IPoolSimulator {
   decimals: number[];
 
   constructor(
+    poolAddress: string,
     initA: number,
     decimals: Allocation[],
     feeNumerator: number,
     adminFeeNumerator: number,
     rates?: Allocation[],
   ) {
+    this.poolAddress = poolAddress;
     this.poolAssetCount = decimals.length;
     this.initA = initA;
     this.futureA = initA;
@@ -68,7 +71,13 @@ export class PoolSimulator implements IPoolSimulator {
 
   static create(state: SimulatorState): PoolSimulator {
     // Create a new pool simulator
-    const simulator = new PoolSimulator(state.initA, state.decimals, state.feeNumerator, state.adminFeeNumerator);
+    const simulator = new PoolSimulator(
+      state.poolAddress,
+      state.initA,
+      state.decimals,
+      state.feeNumerator,
+      state.adminFeeNumerator,
+    );
 
     // Set custom parameters
     simulator.futureA = state.futureA;
@@ -526,6 +535,7 @@ export class PoolSimulator implements IPoolSimulator {
 
   saveSnapshot(): SimulatorSnapshot {
     return {
+      poolAddress: this.poolAddress,
       initA: this.initA,
       futureA: this.futureA,
       initATime: this.initATime,
@@ -541,6 +551,7 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   restoreSnapshot(state: SimulatorSnapshot): void {
+    this.poolAddress = state.poolAddress;
     this.initA = state.initA;
     this.futureA = state.futureA;
     this.initATime = state.initATime;

@@ -1,5 +1,8 @@
-export { PoolSimulator } from './simulator';
+export { PoolSimulator } from './pool-simulator/simulator';
+export { CrossPoolSimulator } from './cross-pool-simulators/simulator';
 
 export * from './interfaces';
 
 export * from './types';
+
+export * from './cross-pool-simulators/dto/deposit';

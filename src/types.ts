@@ -1,6 +1,7 @@
 import { Allocation } from '@torch-finance/core';
 
 interface SimulatorConfig {
+  poolAddress: string;
   initA: number; // initial amplification coefficient
   futureA: number; // future amplification coefficient
   initATime: number; // initial time of amplification coefficient
