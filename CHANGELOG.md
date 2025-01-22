@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.2.5
+
+### Patch Changes
+
+- f263dce: update @torch-finance/dex-contract-wrapper to version 0.2.1 in package.json and pnpm-lock.yaml
+
 ## 0.2.4
 
 ### Patch Changes
