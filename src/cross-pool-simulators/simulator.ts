@@ -170,7 +170,7 @@ export class CrossPoolSimulator {
   ): SimulateSwapResult {
     let result: SimulateSwapResult;
     switch (hop.action) {
-      case 'swap':
+      case 'Swap':
         if (isExactIn) {
           const simulateResult = simulator.swap({
             mode: 'ExactIn',
@@ -197,7 +197,7 @@ export class CrossPoolSimulator {
         }
         break;
 
-      case 'deposit':
+      case 'Deposit':
         if (isExactIn) {
           const simulateResult = simulator.deposit({
             depositAmounts: [
@@ -218,7 +218,7 @@ export class CrossPoolSimulator {
         }
         break;
 
-      case 'withdraw':
+      case 'Withdraw':
         if (isExactIn) {
           const simulateWithdrawResult = simulator.withdraw({
             lpAmount: amount,
