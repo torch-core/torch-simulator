@@ -1,15 +1,15 @@
 import { Asset } from '@torch-finance/core';
-import { Hop, HopAction } from './dto/route';
+import { SimulateHop, HopAction } from './dto/hops';
 import { PoolSimulator } from '../pool-simulator/simulator';
 import { Address } from '@ton/core';
 
-export function getHops(poolSimulators: PoolSimulator[], assetIn: Asset, assetOut: Asset): Hop[] {
+export function getHops(poolSimulators: PoolSimulator[], assetIn: Asset, assetOut: Asset): SimulateHop[] {
   if (assetIn.equals(assetOut)) {
     throw new Error('Asset in and asset out cannot be the same');
   }
 
   let currentAssetIn = assetIn;
-  const routes: Hop[] = [];
+  const routes: SimulateHop[] = [];
 
   for (let i = 0; i < poolSimulators.length; i++) {
     const currentPool = poolSimulators[i];

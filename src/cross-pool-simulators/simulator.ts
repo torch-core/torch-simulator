@@ -4,7 +4,7 @@ import { ParsedDepositParams } from './dto/deposit';
 import { Address } from '@ton/core';
 import { Allocation, Asset } from '@torch-finance/core';
 import { Withdraw, WithdrawParams } from './dto/withdraw';
-import { Hop, HopAction } from './dto/route';
+import { SimulateHop, HopAction } from './dto/hops';
 import { abs } from './abs';
 import { ParsedSwapParams } from './dto/swap';
 
@@ -109,7 +109,7 @@ export class CrossPoolSimulator {
     return withdrawResults;
   }
 
-  async swap(parsedParams: ParsedSwapParams, hops: Hop[]): Promise<SimulateSwapResult[]> {
+  async swap(parsedParams: ParsedSwapParams, hops: SimulateHop[]): Promise<SimulateSwapResult[]> {
     if (parsedParams.mode === 'ExactIn') {
       const swapExactInResults = this.processHopsExactIn(hops, this.simulators, parsedParams.amountIn);
       return swapExactInResults;
@@ -121,7 +121,11 @@ export class CrossPoolSimulator {
     return swapExactOutResults;
   }
 
-  private processHopsExactIn(hops: Hop[], simulators: PoolSimulator[], initialAmount: bigint): SimulateSwapResult[] {
+  private processHopsExactIn(
+    hops: SimulateHop[],
+    simulators: PoolSimulator[],
+    initialAmount: bigint,
+  ): SimulateSwapResult[] {
     let swapAmount = initialAmount;
     const swapResults: SimulateSwapResult[] = [];
 
@@ -137,7 +141,11 @@ export class CrossPoolSimulator {
     return swapResults;
   }
 
-  private processHopsExactOut(hops: Hop[], simulators: PoolSimulator[], initialAmount: bigint): SimulateSwapResult[] {
+  private processHopsExactOut(
+    hops: SimulateHop[],
+    simulators: PoolSimulator[],
+    initialAmount: bigint,
+  ): SimulateSwapResult[] {
     let swapAmount = initialAmount;
     const swapResults: SimulateSwapResult[] = [];
 
@@ -154,7 +162,12 @@ export class CrossPoolSimulator {
     return swapResults;
   }
 
-  private processHop(hop: Hop, simulator: PoolSimulator, amount: bigint, isExactIn: boolean): SimulateSwapResult {
+  private processHop(
+    hop: SimulateHop,
+    simulator: PoolSimulator,
+    amount: bigint,
+    isExactIn: boolean,
+  ): SimulateSwapResult {
     let result: SimulateSwapResult;
     switch (hop.action) {
       case 'swap':
@@ -296,7 +309,7 @@ export class CrossPoolSimulator {
   private getExactDepositAmount(
     simulator: PoolSimulator,
     targetLpAmount: bigint,
-    hop: Hop,
+    hop: SimulateHop,
     maxIterations: number = 200,
     tolerance: bigint = 1n,
   ): SimulateSwapResult {
@@ -362,13 +375,13 @@ export class CrossPoolSimulator {
     };
   }
 
-  getHops(poolSimulators: PoolSimulator[], assetIn: Asset, assetOut: Asset): Hop[] {
+  getHops(poolSimulators: PoolSimulator[], assetIn: Asset, assetOut: Asset): SimulateHop[] {
     if (assetIn.equals(assetOut)) {
       throw new Error('Asset in and asset out cannot be the same');
     }
 
     let currentAssetIn = assetIn;
-    const routes: Hop[] = [];
+    const routes: SimulateHop[] = [];
 
     for (let i = 0; i < poolSimulators.length; i++) {
       const currentPool = poolSimulators[i];
