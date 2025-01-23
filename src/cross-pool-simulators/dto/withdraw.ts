@@ -49,6 +49,7 @@ export type SingleWithdrawWithNext = SingleWithdrawBase & {
 
 export type SingleWithdrawWithAsset = SingleWithdrawBase & {
   withdrawAsset: z.input<typeof AssetSchema>;
+
   nextWithdraw?: never; // Enforce nextWithdraw is undefined when withdrawAsset is defined
 };
 
@@ -74,6 +75,11 @@ export class Withdraw {
     this.mode = params.mode;
     this.pool = AddressSchema.parse(params.pool);
     this.burnLpAmount = BigInt(params.removeLpAmount);
+
+    // mode can only be Single or Balanced
+    if (params.mode !== 'Single' && params.mode !== 'Balanced') {
+      throw new Error('Invalid mode');
+    }
 
     if (params.mode === 'Single' && !params.withdrawAsset && !params.nextWithdraw) {
       throw new Error('withdrawAsset must be defined when mode is Single');
@@ -117,9 +123,8 @@ export class Withdraw {
         }
       }
     }
-
     if (params.mode === 'Single' && !params.nextWithdraw) {
-      this.withdrawAsset = new Asset(params.withdrawAsset!);
+      this.withdrawAsset = Asset.fromJSON(params.withdrawAsset);
     }
   }
 
@@ -128,7 +133,7 @@ export class Withdraw {
       return {
         pool: AddressSchema.parse(params.pool),
         mode: params.mode,
-        withdrawAsset: new Asset(params.withdrawAsset),
+        withdrawAsset: Asset.fromJSON(params.withdrawAsset),
       };
     }
     throw new Error('Invalid next withdraw');
