@@ -2,9 +2,9 @@ import { Address } from '@ton/core';
 import { Asset } from '@torch-finance/core';
 
 export enum HopAction {
-  SWAP = 'swap',
-  DEPOSIT = 'deposit',
-  WITHDRAW = 'withdraw',
+  SWAP = 'Swap',
+  DEPOSIT = 'Deposit',
+  WITHDRAW = 'Withdraw',
 }
 export interface SimulateHop {
   action: HopAction;
