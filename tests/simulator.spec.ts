@@ -1,5 +1,5 @@
 // Jest test suite for PoolSimulator
-import { PoolSimulator } from '../src/simulator';
+import { PoolSimulator } from '../src/pool-simulator/simulator';
 import { Allocation, Asset } from '@torch-finance/core';
 import { SimulatorState } from '../src/types';
 import {
@@ -15,6 +15,7 @@ function createSimulatorState(): SimulatorState {
   const jettonAsset = Asset.jetton('kQDMNIkeVbm1yBuijkIp8ryRHK4OGkBUgqpqVIxtP4-4Zs78');
 
   return {
+    poolAddress: '0x0000000000000000000000000000000000000000',
     initA: 100,
     futureA: 200,
     initATime: Math.floor(Date.now() / 1000),
