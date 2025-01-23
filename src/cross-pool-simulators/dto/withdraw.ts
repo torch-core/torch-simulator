@@ -1,23 +1,22 @@
 import { Address } from '@ton/core';
 import { z } from '@hono/zod-openapi';
-import { Asset, AssetSchema } from '@torch-finance/core';
-import { AddressLike } from '../common';
+import { AddressSchema, Asset, AssetSchema } from '@torch-finance/core';
 export type WithdrawMode = 'Single' | 'Balanced';
 
 interface BaseWithdraw {
-  pool: z.input<typeof AddressLike>;
+  pool: z.input<typeof AddressSchema>;
   removeLpAmount: string;
 }
 
 // Strictly define NextWithdraw based on mode
 interface NextWithdrawSingle {
-  pool: z.input<typeof AddressLike>;
+  pool: z.input<typeof AddressSchema>;
   mode: 'Single';
   withdrawAsset: z.input<typeof AssetSchema>; // Must be defined for Single mode
 }
 
 interface NextWithdrawBalanced {
-  pool: z.input<typeof AddressLike>;
+  pool: z.input<typeof AddressSchema>;
   mode: 'Balanced';
   withdrawAsset?: never; // Must be undefined for Balanced mode
 }
@@ -73,7 +72,7 @@ export class Withdraw {
 
   constructor(params: WithdrawParams) {
     this.mode = params.mode;
-    this.pool = AddressLike.parse(params.pool);
+    this.pool = AddressSchema.parse(params.pool);
     this.burnLpAmount = BigInt(params.removeLpAmount);
 
     if (params.mode === 'Single' && !params.withdrawAsset && !params.nextWithdraw) {
@@ -98,7 +97,7 @@ export class Withdraw {
         if (!hasNextWithdrawAsset && isNextModeSingle) {
           throw new Error('Next withdrawAsset must be defined when nextWithdraw mode is Single');
         }
-        this.withdrawAsset = Asset.jetton(AddressLike.parse(params.nextWithdraw.pool));
+        this.withdrawAsset = Asset.jetton(AddressSchema.parse(params.nextWithdraw.pool));
         if (params.nextWithdraw.mode === 'Single') {
           this.nextWithdraw = this.buildWithdrawSingleNext(params.nextWithdraw);
         } else if (params.nextWithdraw.mode === 'Balanced') {
@@ -127,7 +126,7 @@ export class Withdraw {
   private buildWithdrawSingleNext(params: NextWithdraw) {
     if (params.mode === 'Single') {
       return {
-        pool: AddressLike.parse(params.pool),
+        pool: AddressSchema.parse(params.pool),
         mode: params.mode,
         withdrawAsset: new Asset(params.withdrawAsset),
       };
@@ -138,7 +137,7 @@ export class Withdraw {
   private buildWithdrawBalancedNext(params: NextWithdraw) {
     if (params.mode === 'Balanced') {
       return {
-        pool: AddressLike.parse(params.pool),
+        pool: AddressSchema.parse(params.pool),
         mode: params.mode,
       };
     }
