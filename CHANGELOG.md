@@ -1,5 +1,12 @@
 # @torch-finance/simulator
 
+## 0.3.0
+
+### Minor Changes
+
+- 694c16d: - Add cross-pool simulator
+  - Support exact deposit/burn amount
+
 ## 0.2.5
 
 ### Patch Changes
