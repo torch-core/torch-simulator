@@ -302,7 +302,7 @@ export class CrossPoolSimulator {
   ): SimulateSwapResult {
     let iterations = 0;
     let lowerBound = 1n;
-    let asset = hop.assetIn;
+    const asset = hop.assetIn;
     const assetDecimal = simulator.decimals[simulator.getIndex(asset)];
     let upperBound = (targetLpAmount * 2n * 10n ** BigInt(assetDecimal)) / 10n ** 18n;
     let guessDepositAmount = (lowerBound + upperBound) / 2n;

@@ -50,7 +50,7 @@ export const SwapParamsSchema = z
       });
     }
   })
-  .transform(data => {
+  .transform((data) => {
     return {
       ...data,
       assetIn: new Asset(data.assetIn),
