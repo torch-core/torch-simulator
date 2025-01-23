@@ -4,9 +4,9 @@ import { ParsedDepositParams } from './dto/deposit';
 import { Address } from '@ton/core';
 import { Allocation, Asset } from '@torch-finance/core';
 import { Withdraw, WithdrawParams } from './dto/withdraw';
-import { ParsedSwapParams } from './dto/swap';
 import { Hop, HopAction } from './dto/route';
 import { abs } from './abs';
+import { ParsedSwapParams } from './dto/swap';
 
 export class CrossPoolSimulator {
   simulators: PoolSimulator[];
@@ -21,7 +21,7 @@ export class CrossPoolSimulator {
     nextDepositAmounts?: Allocation,
   ): Allocation[] {
     const baseAllocation = new Allocation({
-      asset: Asset.jetton(fisrstPoolAddress.toString()),
+      asset: Asset.jetton(fisrstPoolAddress),
       value: firstPoolLpTokenOut,
     });
     return nextDepositAmounts ? [baseAllocation, nextDepositAmounts] : [baseAllocation];
@@ -109,8 +109,7 @@ export class CrossPoolSimulator {
     return withdrawResults;
   }
 
-  async swap(parsedParams: ParsedSwapParams, hops?: Hop[]): Promise<SimulateSwapResult[]> {
-    hops = hops ? hops : this.getHops(this.simulators, parsedParams.assetIn, parsedParams.assetOut);
+  async swap(parsedParams: ParsedSwapParams, hops: Hop[]): Promise<SimulateSwapResult[]> {
     if (parsedParams.mode === 'ExactIn') {
       const swapExactInResults = this.processHopsExactIn(hops, this.simulators, parsedParams.amountIn);
       return swapExactInResults;
@@ -303,7 +302,7 @@ export class CrossPoolSimulator {
   ): SimulateSwapResult {
     let iterations = 0;
     let lowerBound = 1n;
-    const asset = hop.assetIn;
+    let asset = hop.assetIn;
     const assetDecimal = simulator.decimals[simulator.getIndex(asset)];
     let upperBound = (targetLpAmount * 2n * 10n ** BigInt(assetDecimal)) / 10n ** 18n;
     let guessDepositAmount = (lowerBound + upperBound) / 2n;
