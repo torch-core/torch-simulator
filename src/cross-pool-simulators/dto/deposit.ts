@@ -1,14 +1,13 @@
-import { Allocation, AllocationSchema } from '@torch-finance/core';
-import { AddressLike } from '../common';
+import { AddressSchema, Allocation, AllocationSchema } from '@torch-finance/core';
 import { z } from '@hono/zod-openapi';
 
 const DepositBaseSchema = z.object({
-  pool: AddressLike,
+  pool: AddressSchema,
   depositAmounts: AllocationSchema.array().transform((v) => Allocation.createAllocations(v)),
 });
 
 const DepositNextSchema = z.object({
-  pool: AddressLike,
+  pool: AddressSchema,
   depositAmounts: AllocationSchema.optional().transform((v) => (v ? Allocation.createAllocations(v)[0] : undefined)),
 });
 

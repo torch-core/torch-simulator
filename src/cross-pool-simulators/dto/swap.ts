@@ -1,21 +1,20 @@
 import { z } from '@hono/zod-openapi';
-import { Asset, AssetSchema } from '@torch-finance/core';
-import { AddressLike, BigIntLike } from '../common';
+import { AddressSchema, Asset, AssetSchema } from '@torch-finance/core';
 
 const GeneralSwapParamsSchema = z.object({
   assetIn: AssetSchema,
   assetOut: AssetSchema,
-  routes: z.array(AddressLike).optional(),
+  routes: z.array(AddressSchema).optional(),
 });
 
 export const ExactInParamsSchema = GeneralSwapParamsSchema.extend({
   mode: z.literal('ExactIn'),
-  amountIn: BigIntLike,
+  amountIn: z.union([z.bigint(), z.string().transform((v) => BigInt(v)), z.number().transform((v) => BigInt(v))]),
 });
 
 export const ExactOutParamsSchema = GeneralSwapParamsSchema.extend({
   mode: z.literal('ExactOut'),
-  amountOut: BigIntLike,
+  amountOut: z.union([z.bigint(), z.string().transform((v) => BigInt(v)), z.number().transform((v) => BigInt(v))]),
 });
 
 export const SwapParamsSchema = z
