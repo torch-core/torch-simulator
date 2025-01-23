@@ -6,7 +6,7 @@ export enum HopAction {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
 }
-export interface Hop {
+export interface SimulateHop {
   action: HopAction;
   pool: Address;
   assetIn: Asset;
