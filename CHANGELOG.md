@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.3.1
+
+### Patch Changes
+
+- 7aa959a: Add SimulateHop Interface
+
 ## 0.3.0
 
 ### Minor Changes
