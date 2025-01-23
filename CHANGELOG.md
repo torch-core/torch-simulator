@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.3.2
+
+### Patch Changes
+
+- 4c21dd3: chore: update dependencies and refactor schemas in cross-pool simulators
+
 ## 0.3.1
 
 ### Patch Changes
