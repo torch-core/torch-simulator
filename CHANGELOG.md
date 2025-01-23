@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.3.4
+
+### Patch Changes
+
+- ef506cf: Refactory HopAction type
+
 ## 0.3.3
 
 ### Patch Changes
