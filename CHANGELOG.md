@@ -1,5 +1,11 @@
 # @torch-finance/simulator
 
+## 0.3.5
+
+### Patch Changes
+
+- b2a3c15: Upgrade @torch-finance/dex-contract-wrapper to version 0.2.4
+
 ## 0.3.4
 
 ### Patch Changes

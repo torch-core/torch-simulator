@@ -1,6 +1,6 @@
 {
   "name": "@torch-finance/simulator",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "",
   "packageManager": "pnpm@10.0.0",
   "engines": {
