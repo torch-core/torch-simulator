@@ -8,7 +8,7 @@ import {
 } from '@torch-finance/dex-contract-wrapper';
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { PoolSimulatorFuzzer } from './fuzzer/pool-simulator-fuzzer';
-import { Operation, OperationType } from './fuzzer/base-fuzzer';
+import { BaseFuzzer, Operation, OperationType } from './fuzzer/base-fuzzer';
 
 // Helper function to create initial pool state
 function createInitialState(): SimulatorState {
@@ -49,7 +49,7 @@ function createInitialState(): SimulatorState {
 }
 
 describe('Pool fuzzing tests', () => {
-  let fuzzer: PoolSimulatorFuzzer;
+  let fuzzer: BaseFuzzer;
 
   beforeAll(async () => {
     // Ensure directories exist
@@ -74,7 +74,7 @@ describe('Pool fuzzing tests', () => {
   });
 
   it('should maintain positive virtual price after random operations', async () => {
-    const numOperations = 2;
+    const numOperations = 5;
     let lastVirtualPrice = fuzzer.getVirtualPrice();
 
     try {
