@@ -54,10 +54,17 @@ export abstract class BaseFuzzer {
     return min + result;
   }
 
-  performRandomDeposit(): Operation {
-    const depositAmounts = this.state.decimals.map((d) => ({
-      asset: d.asset,
-      value: this.randomBigInt(1n * 10n ** d.value, 100_000_000n * 10n ** d.value),
+  performRandomDeposit(minDepositAmount: bigint = 1n, maxDepositAmount: bigint = 100_000_000_000n): Operation {
+    const numAssetsToDeposit = Math.floor(Math.random() * this.state.decimals.length) + 1;
+
+    const selectedIndices = new Set<number>();
+    while (selectedIndices.size < numAssetsToDeposit) {
+      selectedIndices.add(Math.floor(Math.random() * this.state.decimals.length));
+    }
+
+    const depositAmounts = Array.from(selectedIndices).map((index) => ({
+      asset: this.state.decimals[index].asset,
+      value: this.randomBigInt(minDepositAmount, maxDepositAmount),
     }));
 
     const params: SimulateDepositParams = {
@@ -79,13 +86,15 @@ export abstract class BaseFuzzer {
   performRandomWithdraw(
     probabilityOfBalancedWithdraw: number = 1 / 3,
     probabilityOfWithdrawAllLiquidity: number = 1 / 3,
+    minWithdrawAmount: bigint = 1n,
+    maxWithdrawAmount: bigint = this.lpTotalSupply,
   ): Operation | undefined {
     if (this.lpTotalSupply === 0n) return;
 
     const withdrawAmount =
       Math.random() < probabilityOfWithdrawAllLiquidity
         ? this.lpTotalSupply
-        : this.randomBigInt(1n, this.lpTotalSupply);
+        : this.randomBigInt(minWithdrawAmount, maxWithdrawAmount);
 
     const useBalancedWithdraw = Math.random() < probabilityOfBalancedWithdraw;
     const assetOut = useBalancedWithdraw
@@ -109,7 +118,7 @@ export abstract class BaseFuzzer {
     return operation;
   }
 
-  performRandomSwapExactIn(): Operation {
+  performRandomSwapExactIn(minSwapAmount: bigint = 1n, maxSwapAmount: bigint = 100_000_000_000n): Operation {
     const assetInIndex = Math.floor(Math.random() * this.state.decimals.length);
     let assetOutIndex;
     do {
@@ -120,11 +129,8 @@ export abstract class BaseFuzzer {
       mode: 'ExactIn',
       assetIn: this.state.decimals[assetInIndex].asset,
       assetOut: this.state.decimals[assetOutIndex].asset,
-      amountIn: this.randomBigInt(
-        // FIXME
-        1n * 10n ** this.state.decimals[assetInIndex].value,
-        100_000_000n * 10n ** this.state.decimals[assetInIndex].value,
-      ),
+      // FIXME: this is a hack to make the amount in a reasonable range
+      amountIn: this.randomBigInt(minSwapAmount, maxSwapAmount),
       rates: this.state.rates,
     };
 
@@ -139,7 +145,7 @@ export abstract class BaseFuzzer {
     return operation;
   }
 
-  performRandomSwapExactOut(): Operation {
+  performRandomSwapExactOut(minSwapAmount: bigint = 1n, maxSwapAmount: bigint = 100_000_000_000n): Operation {
     const assetInIndex = Math.floor(Math.random() * this.state.decimals.length);
     let assetOutIndex;
     do {
@@ -150,7 +156,12 @@ export abstract class BaseFuzzer {
       mode: 'ExactOut',
       assetIn: this.state.decimals[assetInIndex].asset,
       assetOut: this.state.decimals[assetOutIndex].asset,
-      amountOut: this.randomBigInt(1n, this.state.reserves[assetOutIndex].value),
+      amountOut: this.randomBigInt(
+        minSwapAmount,
+        maxSwapAmount < this.state.reserves[assetOutIndex].value
+          ? maxSwapAmount
+          : this.state.reserves[assetOutIndex].value,
+      ),
       rates: this.state.rates,
     };
 
