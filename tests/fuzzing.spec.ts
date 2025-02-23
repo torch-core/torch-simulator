@@ -240,20 +240,19 @@ describe('Pool fuzzing tests', () => {
 
   it('should maintain consistent state between simulator and contract', async () => {
     const numOperations = 10;
+    let lastVirtualPrice = simulatorFuzzer.getVirtualPrice();
 
     try {
       for (let i = 0; i < numOperations; i++) {
         const operationType = Math.floor(Math.random() * OperationType.values.length);
         let operation: Operation | undefined;
 
-        console.log('Operation type:', OperationType.values[operationType]);
-
         switch (OperationType.values[operationType]) {
           case OperationType.DEPOSIT:
             operation = operationGenerator.generateDeposit();
             break;
           case OperationType.WITHDRAW:
-            operation = operationGenerator.generateWithdraw(simulatorFuzzer.lpTotalSupply);
+            operation = operationGenerator.generateWithdraw(simulatorFuzzer.lpTotalSupply - 1n);
             break;
           case OperationType.SWAP_EXACT_IN:
             operation = operationGenerator.generateSwapExactIn();
@@ -264,12 +263,46 @@ describe('Pool fuzzing tests', () => {
         }
 
         if (operation) {
+          const newVirtualPrice = simulatorFuzzer.getVirtualPrice();
+
+          if (newVirtualPrice < lastVirtualPrice) {
+            const historyJson = JSON.stringify(
+              simulatorFuzzer.history,
+              (_, value) => (typeof value === 'bigint' ? value.toString() : value),
+              2,
+            );
+
+            await writeFile(`fuzzing-failure-${Date.now()}.json`, historyJson);
+
+            throw new Error(`Virtual price decreased from ${lastVirtualPrice} to ${newVirtualPrice}`);
+          }
+
+          lastVirtualPrice = newVirtualPrice;
+
+          // Updated logging based on operation type
+          let operationDetails = '';
+          if (operation.type === OperationType.DEPOSIT) {
+            const params = operation.params as SimulateDepositParams;
+            operationDetails = `Deposited ${params.depositAmounts
+              .map((a) => `${Number(a.value) / 10 ** 9} ${getAssetSymbol(a.asset)}`)
+              .join(', ')}`;
+          } else if (operation.type === OperationType.WITHDRAW) {
+            const params = operation.params as SimulateWithdrawParams;
+            operationDetails = `Withdrew ${params.lpAmount} LP tokens`;
+          } else if (operation.type === OperationType.SWAP_EXACT_IN) {
+            const params = operation.params as SimulateSwapExactInParams;
+            operationDetails = `Swapped ${Number(params.amountIn) / 10 ** 9} ${getAssetSymbol(params.assetIn)} -> ${getAssetSymbol(params.assetOut)}`;
+          } else if (operation.type === OperationType.SWAP_EXACT_OUT) {
+            const params = operation.params as SimulateSwapExactOutParams;
+            operationDetails = `Swapped ${getAssetSymbol(params.assetIn)} -> ${Number(params.amountOut) / 10 ** 9} ${getAssetSymbol(params.assetOut)}`;
+          }
           // Perform operation on both fuzzers
           simulatorFuzzer.performOperation(operation);
           contractFuzzer.performOperation(operation);
 
           expect(simulatorFuzzer.state).toEqual(contractFuzzer.state);
           expect(simulatorFuzzer.getVirtualPrice()).toEqual(contractFuzzer.getVirtualPrice());
+          console.log(`Operation ${i + 1}: ${operationDetails}, Virtual Price: ${Number(newVirtualPrice) / 1e18}`);
         }
       }
 

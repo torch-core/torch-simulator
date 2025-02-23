@@ -44,7 +44,7 @@ export class OperationGenerator {
     probabilityOfBalancedWithdraw: number = 1 / 3,
     probabilityOfWithdrawAllLiquidity: number = 1 / 3,
     minWithdrawAmount: bigint = 1n,
-    maxWithdrawAmount: bigint = lpTotalSupply,
+    maxWithdrawAmount: bigint = lpTotalSupply - 1n,
   ): Operation | undefined {
     if (lpTotalSupply === 0n) return undefined;
 
