@@ -67,8 +67,8 @@ export abstract class BaseFuzzer {
 
     this.deposit(params);
 
-    const operation = {
-      type: 'DEPOSIT',
+    const operation: Operation = {
+      type: OperationType.DEPOSIT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -100,8 +100,8 @@ export abstract class BaseFuzzer {
 
     this.withdraw(params);
 
-    const operation = {
-      type: 'WITHDRAW',
+    const operation: Operation = {
+      type: OperationType.WITHDRAW,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -130,8 +130,8 @@ export abstract class BaseFuzzer {
 
     this.swap(params);
 
-    const operation = {
-      type: 'SWAP_EXACT_IN',
+    const operation: Operation = {
+      type: OperationType.SWAP_EXACT_IN,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -156,8 +156,8 @@ export abstract class BaseFuzzer {
 
     this.swap(params);
 
-    const operation = {
-      type: 'SWAP_EXACT_OUT',
+    const operation: Operation = {
+      type: OperationType.SWAP_EXACT_OUT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
