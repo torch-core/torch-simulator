@@ -139,6 +139,7 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   getD(xp: bigint[], amp: number): bigint {
+    const abs = (x: bigint): bigint => x < 0n ? -x : x;
     const s = xp.reduce((acc, val) => acc + val, 0n);
     if (s === 0n) {
       return 0n;
@@ -149,7 +150,7 @@ export class PoolSimulator implements IPoolSimulator {
     const ann = BigInt(amp) * BigInt(this.poolAssetCount);
     let iter = 0;
 
-    while (Math.abs(Number(d - dPrev)) > 1 && iter < MAX_ITERATIONS) {
+    while (abs(d - dPrev) > 1n && iter < MAX_ITERATIONS) {
       let dP = d;
       for (const x of xp) {
         dP = (dP * d) / (BigInt(this.poolAssetCount) * x);
