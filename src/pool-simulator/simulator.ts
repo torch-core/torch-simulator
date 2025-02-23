@@ -8,6 +8,7 @@ import {
   MIN_RAMP_TIME,
   MAX_A,
   MAX_A_CHANGE,
+  RATE_PRECISION,
 } from '../constants';
 import { IPoolSimulator } from '../interfaces';
 import {
@@ -245,17 +246,21 @@ export class PoolSimulator implements IPoolSimulator {
     let d2 = d1;
     if (totalSupply > 0n) {
       const fees = Array<bigint>(this.poolAssetCount).fill(0n);
+      let invRateSum = 0n;
       for (let i = 0; i < this.poolAssetCount; i++) {
-        const idealBalance = (d1 * oldBalances[i]) / d0;
-        const difference =
-          idealBalance > newBalances[i] ? idealBalance - newBalances[i] : newBalances[i] - idealBalance;
-        fees[i] = (_fee * difference) / FEE_DENOMINATOR;
+        invRateSum += RATE_PRECISION / _rates[i];
+      }
+      for (let i = 0; i < this.poolAssetCount; i++) {
+        const invRate = RATE_PRECISION / _rates[i];
+        const idealBalance = (d1 * invRate) / invRateSum;
+        const needed = idealBalance > oldBalances[i] ? idealBalance - oldBalances[i] : 0n;
+        const feeDeposit = amounts[i] > needed ? amounts[i] - needed : 0n;
+        fees[i] = (_fee * feeDeposit) / FEE_DENOMINATOR;
         const admin_fee = (fees[i] * _adminFee) / FEE_DENOMINATOR;
         this.balances[i] = newBalances[i] - admin_fee;
         this.adminFees[i] += admin_fee;
         newBalances[i] -= fees[i];
       }
-
       d2 = this.getDMem(newBalances, _rates, this.getA());
     } else {
       this.balances = newBalances;
