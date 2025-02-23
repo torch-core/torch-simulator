@@ -458,7 +458,7 @@ export class PoolSimulator implements IPoolSimulator {
 
     const xpReduced = xp.slice();
     const newY = this.getYD(i, xp, d1);
-    const dy_0 = (xp[i] - newY) / this.precisionMultipliers[i];
+    const dy_0 = ((xp[i] - newY) * PRECISION) / _rates[i];
 
     for (let j = 0; j < this.poolAssetCount; j++) {
       let dxExpected = 0n;
@@ -471,7 +471,7 @@ export class PoolSimulator implements IPoolSimulator {
     }
 
     let dy = xpReduced[i] - this.getYD(i, xpReduced, d1);
-    dy = (dy - 1n) / this.precisionMultipliers[i];
+    dy = ((dy - 1n) * PRECISION) / _rates[i];
 
     const dy_fee = dy_0 - dy;
     const dy_admin_fee = (dy_fee * BigInt(this.adminFeeNumerator)) / FEE_DENOMINATOR;
