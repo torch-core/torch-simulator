@@ -183,25 +183,43 @@ export class PoolSimulator implements IPoolSimulator {
     return (D * PRECISION) / totalSupply;
   }
 
-  deposit(depositParams: SimulateDepositParams): SimulateDepositResult {
-    const amounts: bigint[] = Array(this.poolAssetCount).fill(0n);
-    for (let i = 0; i < depositParams.depositAmounts.length; i++) {
-      const index = this.getIndex(depositParams.depositAmounts[i].asset);
-      amounts[index] = depositParams.depositAmounts[i].value;
+  private _validateBalances(): void {
+    if (this.balances.some((balance) => balance < 0n)) {
+      // This happens when fees are > balances
+      throw new Error('Balance cannot be negative');
     }
+  }
 
-    this.rates = this._setRates(depositParams.rates);
-    return this._deposit(amounts);
+  deposit(depositParams: SimulateDepositParams): SimulateDepositResult {
+    const initState = this.saveSnapshot();
+    try {
+      const amounts: bigint[] = Array(this.poolAssetCount).fill(0n);
+      for (let i = 0; i < depositParams.depositAmounts.length; i++) {
+        const index = this.getIndex(depositParams.depositAmounts[i].asset);
+        amounts[index] = depositParams.depositAmounts[i].value;
+      }
+
+      this.rates = this._setRates(depositParams.rates);
+      return this._deposit(amounts);
+    } catch (e) {
+      this.restoreSnapshot(initState);
+      throw e;
+    }
   }
 
   claimAdminFees(rates?: Allocation[]): SimulateDepositResult {
-    this.rates = this._setRates(rates);
-
-    // Convert admin fees to deposit
-    const depositAmounts = this.adminFees.map((fee) => fee);
-    // init adminFees
-    this.adminFees = Array(this.poolAssetCount).fill(BigInt(0));
-    return this._deposit(depositAmounts);
+    const initState = this.saveSnapshot();
+    try {
+      this.rates = this._setRates(rates);
+      // Convert admin fees to deposit
+      const depositAmounts = this.adminFees.map((fee) => fee);
+      // init adminFees
+      this.adminFees = Array(this.poolAssetCount).fill(BigInt(0));
+      return this._deposit(depositAmounts);
+    } catch (e) {
+      this.restoreSnapshot(initState);
+      throw e;
+    }
   }
 
   private _deposit(amounts: bigint[]): SimulateDepositResult {
@@ -237,10 +255,14 @@ export class PoolSimulator implements IPoolSimulator {
         this.adminFees[i] += admin_fee;
         newBalances[i] -= fees[i];
       }
+
       d2 = this.getDMem(newBalances, _rates, this.getA());
     } else {
       this.balances = newBalances;
     }
+
+    this._validateBalances();
+
     let lpAmount = d1;
     if (totalSupply !== 0n) {
       lpAmount = (totalSupply * (d2 - d0)) / d0;
@@ -341,10 +363,16 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   swap(swapParams: SimulateSwapParams): SimulateSwapResult {
-    if (swapParams.mode === 'ExactIn') {
-      return this._swapExactIn(swapParams);
+    const initState = this.saveSnapshot();
+    try {
+      if (swapParams.mode === 'ExactIn') {
+        return this._swapExactIn(swapParams);
+      }
+      return this._swapExactOut(swapParams);
+    } catch (e) {
+      this.restoreSnapshot(initState);
+      throw e;
     }
-    return this._swapExactOut(swapParams);
   }
 
   private _swapExactIn(swapParams: SimulateSwapExactInParams): SimulateSwapExactInResult {
@@ -371,6 +399,9 @@ export class PoolSimulator implements IPoolSimulator {
     this.balances[i] = oldBalances[i] + dx;
     this.balances[j] = oldBalances[j] - dy - dy_admin_fee;
     this.adminFees[j] += dy_admin_fee;
+
+    this._validateBalances();
+
     const vpAfter = this.getVirtualPrice();
 
     return {
@@ -414,11 +445,17 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   withdraw(withdrawParams: SimulateWithdrawParams): SimulateWithdrawResult {
-    this.rates = this._setRates(withdrawParams.rates);
-    if (!withdrawParams.assetOut) {
-      return this._withdrawBalanced(withdrawParams.lpAmount);
+    const initState = this.saveSnapshot();
+    try {
+      this.rates = this._setRates(withdrawParams.rates);
+      if (!withdrawParams.assetOut) {
+        return this._withdrawBalanced(withdrawParams.lpAmount);
+      }
+      return this._withdrawOne(withdrawParams.lpAmount, withdrawParams.assetOut!);
+    } catch (e) {
+      this.restoreSnapshot(initState);
+      throw e;
     }
-    return this._withdrawOne(withdrawParams.lpAmount, withdrawParams.assetOut!);
   }
 
   private _withdrawBalanced(_amount: bigint): SimulateWithdrawResult {
@@ -432,6 +469,9 @@ export class PoolSimulator implements IPoolSimulator {
       this.balances[i] -= value;
       amountOuts[i] = value;
     }
+
+    this._validateBalances();
+
     this.lpTotalSupply -= amount;
     const vpAfter = this.getVirtualPrice();
 
@@ -477,6 +517,8 @@ export class PoolSimulator implements IPoolSimulator {
     const dy_fee = dy_0 - dy;
     const dy_admin_fee = (dy_fee * BigInt(this.adminFeeNumerator)) / FEE_DENOMINATOR;
     this.balances[i] -= dy + dy_admin_fee;
+
+    this._validateBalances();
     this.adminFees[i] += dy_admin_fee;
     this.lpTotalSupply -= amount;
     const vpAfter = this.getVirtualPrice();
@@ -535,7 +577,7 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   saveSnapshot(): SimulatorSnapshot {
-    return {
+    return structuredClone({
       poolAddress: this.poolAddress,
       initA: this.initA,
       futureA: this.futureA,
@@ -548,7 +590,7 @@ export class PoolSimulator implements IPoolSimulator {
       adminFees: this.adminFees,
       lpTotalSupply: this.lpTotalSupply,
       rates: this.rates,
-    };
+    });
   }
 
   restoreSnapshot(state: SimulatorSnapshot): void {
