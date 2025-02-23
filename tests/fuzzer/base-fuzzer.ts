@@ -7,13 +7,19 @@ import {
 } from '@torch-finance/dex-contract-wrapper';
 import { SimulatorState } from '../../src/types';
 
-export enum OperationType {
-  DEPOSIT,
-  WITHDRAW,
-  SWAP_EXACT_IN,
-  SWAP_EXACT_OUT,
-}
+export abstract class OperationType {
+  static readonly DEPOSIT = 'DEPOSIT';
+  static readonly WITHDRAW = 'WITHDRAW';
+  static readonly SWAP_EXACT_IN = 'SWAP_EXACT_IN';
+  static readonly SWAP_EXACT_OUT = 'SWAP_EXACT_OUT';
 
+  static readonly values = [
+    OperationType.DEPOSIT,
+    OperationType.WITHDRAW,
+    OperationType.SWAP_EXACT_IN,
+    OperationType.SWAP_EXACT_OUT,
+  ] as const;
+}
 export interface Operation {
   type: OperationType;
   params: SimulateDepositParams | SimulateWithdrawParams | SimulateSwapExactInParams | SimulateSwapExactOutParams;
@@ -34,7 +40,6 @@ export abstract class BaseFuzzer {
   abstract getVirtualPrice(): bigint;
   abstract get lpTotalSupply(): bigint;
 
-  // Add getter for operation history
   get history(): Operation[] {
     return this.operationHistory;
   }
@@ -52,7 +57,7 @@ export abstract class BaseFuzzer {
   performRandomDeposit(): Operation {
     const depositAmounts = this.state.decimals.map((d) => ({
       asset: d.asset,
-      value: this.randomBigInt(1n * 10n ** 18n, 100n * 10n ** 18n),
+      value: this.randomBigInt(1n * d.value, 100_000_000n * d.value),
     }));
 
     const params: SimulateDepositParams = {
@@ -63,7 +68,7 @@ export abstract class BaseFuzzer {
     this.deposit(params);
 
     const operation = {
-      type: OperationType.DEPOSIT,
+      type: 'DEPOSIT',
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -71,23 +76,32 @@ export abstract class BaseFuzzer {
     return operation;
   }
 
-  performRandomWithdraw(): Operation | undefined {
+  performRandomWithdraw(
+    probabilityOfBalancedWithdraw: number = 1 / 3,
+    probabilityOfWithdrawAllLiquidity: number = 1 / 3,
+  ): Operation | undefined {
     if (this.lpTotalSupply === 0n) return;
 
-    const maxWithdraw = this.lpTotalSupply / 4n;
-    const withdrawAmount = this.randomBigInt(1n, maxWithdraw);
-    const assetIndex = Math.floor(Math.random() * this.state.decimals.length);
+    const withdrawAmount =
+      Math.random() < probabilityOfWithdrawAllLiquidity
+        ? this.lpTotalSupply
+        : this.randomBigInt(1n, this.lpTotalSupply);
+
+    const useBalancedWithdraw = Math.random() < probabilityOfBalancedWithdraw;
+    const assetOut = useBalancedWithdraw
+      ? null
+      : this.state.decimals[Math.floor(Math.random() * this.state.decimals.length)].asset;
 
     const params: SimulateWithdrawParams = {
       lpAmount: withdrawAmount,
       rates: this.state.rates,
-      assetOut: this.state.decimals[assetIndex].asset,
+      assetOut,
     };
 
     this.withdraw(params);
 
     const operation = {
-      type: OperationType.WITHDRAW,
+      type: 'WITHDRAW',
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -106,14 +120,18 @@ export abstract class BaseFuzzer {
       mode: 'ExactIn',
       assetIn: this.state.decimals[assetInIndex].asset,
       assetOut: this.state.decimals[assetOutIndex].asset,
-      amountIn: this.randomBigInt(1n * 10n ** 18n, 10n * 10n ** 18n),
+      amountIn: this.randomBigInt(
+        // FIXME
+        1n * this.state.decimals[assetInIndex].value,
+        100_000_000n * this.state.decimals[assetInIndex].value,
+      ),
       rates: this.state.rates,
     };
 
     this.swap(params);
 
     const operation = {
-      type: OperationType.SWAP_EXACT_IN,
+      type: 'SWAP_EXACT_IN',
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };
@@ -132,14 +150,14 @@ export abstract class BaseFuzzer {
       mode: 'ExactOut',
       assetIn: this.state.decimals[assetInIndex].asset,
       assetOut: this.state.decimals[assetOutIndex].asset,
-      amountOut: this.randomBigInt(1n * 10n ** 18n, 10n * 10n ** 18n),
+      amountOut: this.randomBigInt(1n, this.state.reserves[assetOutIndex].value),
       rates: this.state.rates,
     };
 
     this.swap(params);
 
     const operation = {
-      type: OperationType.SWAP_EXACT_OUT,
+      type: 'SWAP_EXACT_OUT',
       params,
       virtualPrice: this.getVirtualPrice().toString(),
     };

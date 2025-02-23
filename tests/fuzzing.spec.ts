@@ -74,16 +74,16 @@ describe('Pool fuzzing tests', () => {
   });
 
   it('should maintain positive virtual price after random operations', async () => {
-    const numOperations = 5;
+    const numOperations = 10;
     let lastVirtualPrice = fuzzer.getVirtualPrice();
 
     try {
       for (let i = 0; i < numOperations; i++) {
-        const operationType = Math.floor((Math.random() * Object.keys(OperationType).length) / 2);
+        const operationType = Math.floor(Math.random() * OperationType.values.length);
 
         let operation: Operation | undefined;
 
-        switch (operationType) {
+        switch (OperationType.values[operationType]) {
           case OperationType.DEPOSIT:
             operation = fuzzer.performRandomDeposit();
             break;
@@ -173,7 +173,7 @@ describe('Pool fuzzing tests', () => {
         }
 
         const virtualPrice = fuzzer.getVirtualPrice().toString();
-        console.log(`Operation ${index + 1}: ${OperationType[operation.type]}, Virtual Price: ${virtualPrice}`);
+        console.log(`Operation ${index + 1}: ${operation.type}, Virtual Price: ${virtualPrice}`);
 
         if (virtualPrice !== operation.virtualPrice) {
           throw new Error(
