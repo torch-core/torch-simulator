@@ -139,7 +139,7 @@ export class PoolSimulator implements IPoolSimulator {
   }
 
   getD(xp: bigint[], amp: number): bigint {
-    const abs = (x: bigint): bigint => x < 0n ? -x : x;
+    const abs = (x: bigint): bigint => (x < 0n ? -x : x);
     const s = xp.reduce((acc, val) => acc + val, 0n);
     if (s === 0n) {
       return 0n;
