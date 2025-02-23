@@ -8,7 +8,9 @@ import {
 } from '@torch-finance/dex-contract-wrapper';
 import { writeFile, readFile, mkdir } from 'fs/promises';
 import { PoolSimulatorFuzzer } from './fuzzer/pool-simulator-fuzzer';
-import { BaseFuzzer, Operation, OperationType } from './fuzzer/base-fuzzer';
+import { Operation, OperationType } from './fuzzer/base-fuzzer';
+import { ContractFuzzer } from './fuzzer/contract-fuzzer';
+import { OperationGenerator } from './fuzzer/operation-generator';
 
 // Add this helper function at the top of the file, after the imports
 function getAssetSymbol(asset: Asset): string {
@@ -69,7 +71,9 @@ function createInitialState(): SimulatorState {
 }
 
 describe('Pool fuzzing tests', () => {
-  let fuzzer: BaseFuzzer;
+  let simulatorFuzzer: PoolSimulatorFuzzer;
+  let contractFuzzer: ContractFuzzer;
+  let operationGenerator: OperationGenerator;
 
   beforeAll(async () => {
     // Ensure directories exist
@@ -79,7 +83,9 @@ describe('Pool fuzzing tests', () => {
 
   beforeEach(() => {
     const state = createInitialState();
-    fuzzer = new PoolSimulatorFuzzer(state);
+    simulatorFuzzer = new PoolSimulatorFuzzer(state);
+    contractFuzzer = new ContractFuzzer(state);
+    operationGenerator = new OperationGenerator(state);
 
     // Initial deposit to bootstrap the pool
     const initialDeposit: SimulateDepositParams = {
@@ -94,12 +100,13 @@ describe('Pool fuzzing tests', () => {
       'Initial deposit:',
       initialDeposit.depositAmounts.map((a) => `${Number(a.value) / 10 ** 9} ${getAssetSymbol(a.asset)}`),
     );
-    fuzzer.deposit(initialDeposit);
+    simulatorFuzzer.deposit(initialDeposit);
+    contractFuzzer.deposit(initialDeposit);
   });
 
   it('should maintain positive virtual price after random operations', async () => {
     const numOperations = 10;
-    let lastVirtualPrice = fuzzer.getVirtualPrice();
+    let lastVirtualPrice = simulatorFuzzer.getVirtualPrice();
 
     try {
       for (let i = 0; i < numOperations; i++) {
@@ -110,25 +117,25 @@ describe('Pool fuzzing tests', () => {
         console.log('Operation type:', OperationType.values[operationType]);
         switch (OperationType.values[operationType]) {
           case OperationType.DEPOSIT:
-            operation = fuzzer.performRandomDeposit();
+            operation = simulatorFuzzer.performRandomDeposit();
             break;
           case OperationType.WITHDRAW:
-            operation = fuzzer.performRandomWithdraw();
+            operation = simulatorFuzzer.performRandomWithdraw();
             break;
           case OperationType.SWAP_EXACT_IN:
-            operation = fuzzer.performRandomSwapExactIn();
+            operation = simulatorFuzzer.performRandomSwapExactIn();
             break;
           case OperationType.SWAP_EXACT_OUT:
-            operation = fuzzer.performRandomSwapExactOut();
+            operation = simulatorFuzzer.performRandomSwapExactOut();
             break;
         }
 
         if (operation) {
-          const newVirtualPrice = fuzzer.getVirtualPrice();
+          const newVirtualPrice = simulatorFuzzer.getVirtualPrice();
 
           if (newVirtualPrice < lastVirtualPrice) {
             const historyJson = JSON.stringify(
-              fuzzer.history,
+              simulatorFuzzer.history,
               (_, value) => (typeof value === 'bigint' ? value.toString() : value),
               2,
             );
@@ -164,7 +171,7 @@ describe('Pool fuzzing tests', () => {
 
       // Save successful operation history
       const historyJson = JSON.stringify(
-        fuzzer.history,
+        simulatorFuzzer.history,
         (_, value) => (typeof value === 'bigint' ? value.toString() : value),
         2,
       );
@@ -175,7 +182,7 @@ describe('Pool fuzzing tests', () => {
     } catch (error) {
       // Save failed operation history to a different directory
       const historyJson = JSON.stringify(
-        fuzzer.history,
+        simulatorFuzzer.history,
         (_, value) => (typeof value === 'bigint' ? value.toString() : value),
         2,
       );
@@ -198,24 +205,24 @@ describe('Pool fuzzing tests', () => {
 
     // Reset simulator state
     const state = createInitialState();
-    fuzzer = new PoolSimulatorFuzzer(state);
+    simulatorFuzzer = new PoolSimulatorFuzzer(state);
 
     for (const [index, operation] of history.entries()) {
       try {
         switch (operation.type) {
           case OperationType.DEPOSIT:
-            fuzzer.deposit(operation.params as SimulateDepositParams);
+            simulatorFuzzer.deposit(operation.params as SimulateDepositParams);
             break;
           case OperationType.WITHDRAW:
-            fuzzer.withdraw(operation.params as SimulateWithdrawParams);
+            simulatorFuzzer.withdraw(operation.params as SimulateWithdrawParams);
             break;
           case OperationType.SWAP_EXACT_IN:
           case OperationType.SWAP_EXACT_OUT:
-            fuzzer.swap(operation.params as SimulateSwapExactInParams | SimulateSwapExactOutParams);
+            simulatorFuzzer.swap(operation.params as SimulateSwapExactInParams | SimulateSwapExactOutParams);
             break;
         }
 
-        const virtualPrice = fuzzer.getVirtualPrice().toString();
+        const virtualPrice = simulatorFuzzer.getVirtualPrice().toString();
         console.log(`Operation ${index + 1}: ${operation.type}, Virtual Price: ${virtualPrice}`);
 
         if (virtualPrice !== operation.virtualPrice) {
@@ -228,6 +235,66 @@ describe('Pool fuzzing tests', () => {
         console.error(`Failed to reproduce operation ${index + 1}:`, error);
         throw error;
       }
+    }
+  });
+
+  it('should maintain consistent state between simulator and contract', async () => {
+    const numOperations = 10;
+
+    try {
+      for (let i = 0; i < numOperations; i++) {
+        const operationType = Math.floor(Math.random() * OperationType.values.length);
+        let operation: Operation | undefined;
+
+        console.log('Operation type:', OperationType.values[operationType]);
+
+        switch (OperationType.values[operationType]) {
+          case OperationType.DEPOSIT:
+            operation = operationGenerator.generateDeposit();
+            break;
+          case OperationType.WITHDRAW:
+            operation = operationGenerator.generateWithdraw(simulatorFuzzer.lpTotalSupply);
+            break;
+          case OperationType.SWAP_EXACT_IN:
+            operation = operationGenerator.generateSwapExactIn();
+            break;
+          case OperationType.SWAP_EXACT_OUT:
+            operation = operationGenerator.generateSwapExactOut();
+            break;
+        }
+
+        if (operation) {
+          // Perform operation on both fuzzers
+          simulatorFuzzer.performOperation(operation);
+          contractFuzzer.performOperation(operation);
+
+          expect(simulatorFuzzer.state).toEqual(contractFuzzer.state);
+          expect(simulatorFuzzer.getVirtualPrice()).toEqual(contractFuzzer.getVirtualPrice());
+        }
+      }
+
+      // Save successful operation history
+      const historyJson = JSON.stringify(
+        simulatorFuzzer.history,
+        (_, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2,
+      );
+
+      const timestamp = Date.now();
+      await writeFile(`tests/report/histories/success-${timestamp}.json`, historyJson);
+      console.log(`Saved successful operation history to tests/report/histories/success-${timestamp}.json`);
+    } catch (error) {
+      // Save failed operation history
+      const historyJson = JSON.stringify(
+        simulatorFuzzer.history,
+        (_, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2,
+      );
+
+      const timestamp = Date.now();
+      await writeFile(`tests/report/failures/failure-${timestamp}.json`, historyJson);
+      console.error(`Saved failed operation history to tests/report/failures/failure-${timestamp}.json`);
+      throw error;
     }
   });
 });

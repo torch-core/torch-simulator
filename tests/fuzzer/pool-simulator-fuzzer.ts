@@ -7,6 +7,7 @@ import {
   SimulateSwapExactOutParams,
   SimulateWithdrawParams,
 } from '@torch-finance/dex-contract-wrapper';
+import { Allocation } from '@torch-finance/core';
 
 export class PoolSimulatorFuzzer extends BaseFuzzer {
   private simulator: PoolSimulator;
@@ -34,5 +35,25 @@ export class PoolSimulatorFuzzer extends BaseFuzzer {
 
   get lpTotalSupply(): bigint {
     return this.simulator.lpTotalSupply;
+  }
+
+  get state(): SimulatorState {
+    return {
+      ...this.initialState,
+      adminFees: Allocation.createAllocations(
+        this.initialState.decimals.map((d, index) => ({
+          asset: d.asset,
+          value: this.simulator.adminFees[index],
+        })),
+      ),
+      reserves: Allocation.createAllocations(
+        this.initialState.decimals.map((d, index) => ({
+          asset: d.asset,
+          value: this.simulator.balances[index],
+        })),
+      ),
+      lpTotalSupply: this.simulator.lpTotalSupply,
+      rates: this.initialState.rates,
+    };
   }
 }

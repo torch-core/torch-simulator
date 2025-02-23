@@ -28,21 +28,38 @@ export interface Operation {
 }
 
 export abstract class BaseFuzzer {
-  protected state: SimulatorState;
   protected operationHistory: Operation[] = [];
 
-  constructor(protected initialState: SimulatorState) {
-    this.state = initialState;
-  }
+  constructor(protected initialState: SimulatorState) {}
 
   abstract deposit(params: SimulateDepositParams): void;
   abstract withdraw(params: SimulateWithdrawParams): void;
   abstract swap(params: SimulateSwapExactInParams | SimulateSwapExactOutParams): void;
   abstract getVirtualPrice(): bigint;
   abstract get lpTotalSupply(): bigint;
+  abstract get state(): SimulatorState;
 
   get history(): Operation[] {
     return this.operationHistory;
+  }
+
+  performOperation(operation: Operation): void {
+    switch (operation.type) {
+      case OperationType.DEPOSIT:
+        this.deposit(operation.params as SimulateDepositParams);
+        break;
+      case OperationType.WITHDRAW:
+        this.withdraw(operation.params as SimulateWithdrawParams);
+        break;
+      case OperationType.SWAP_EXACT_IN:
+      case OperationType.SWAP_EXACT_OUT:
+        this.swap(operation.params as SimulateSwapExactInParams | SimulateSwapExactOutParams);
+        break;
+    }
+
+    operation.virtualPrice = this.getVirtualPrice().toString();
+    operation.state = this.state;
+    this.operationHistory.push(operation);
   }
 
   protected randomBigInt(min: bigint, max: bigint): bigint {
@@ -73,15 +90,13 @@ export abstract class BaseFuzzer {
       rates: this.state.rates,
     };
 
-    this.deposit(params);
-
     const operation: Operation = {
       type: OperationType.DEPOSIT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
       state: this.state,
     };
-    this.operationHistory.push(operation);
+    this.performOperation(operation);
     return operation;
   }
 
@@ -109,15 +124,13 @@ export abstract class BaseFuzzer {
       assetOut,
     };
 
-    this.withdraw(params);
-
     const operation: Operation = {
       type: OperationType.WITHDRAW,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
       state: this.state,
     };
-    this.operationHistory.push(operation);
+    this.performOperation(operation);
     return operation;
   }
 
@@ -137,15 +150,13 @@ export abstract class BaseFuzzer {
       rates: this.state.rates,
     };
 
-    this.swap(params);
-
     const operation: Operation = {
       type: OperationType.SWAP_EXACT_IN,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
       state: this.state,
     };
-    this.operationHistory.push(operation);
+    this.performOperation(operation);
     return operation;
   }
 
@@ -169,15 +180,13 @@ export abstract class BaseFuzzer {
       rates: this.state.rates,
     };
 
-    this.swap(params);
-
     const operation: Operation = {
       type: OperationType.SWAP_EXACT_OUT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
       state: this.state,
     };
-    this.operationHistory.push(operation);
+    this.performOperation(operation);
     return operation;
   }
 }
