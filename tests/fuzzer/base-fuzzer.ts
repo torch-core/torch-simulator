@@ -57,7 +57,7 @@ export abstract class BaseFuzzer {
   performRandomDeposit(): Operation {
     const depositAmounts = this.state.decimals.map((d) => ({
       asset: d.asset,
-      value: this.randomBigInt(1n * d.value, 100_000_000n * d.value),
+      value: this.randomBigInt(1n * 10n ** d.value, 100_000_000n * 10n ** d.value),
     }));
 
     const params: SimulateDepositParams = {
@@ -122,8 +122,8 @@ export abstract class BaseFuzzer {
       assetOut: this.state.decimals[assetOutIndex].asset,
       amountIn: this.randomBigInt(
         // FIXME
-        1n * this.state.decimals[assetInIndex].value,
-        100_000_000n * this.state.decimals[assetInIndex].value,
+        1n * 10n ** this.state.decimals[assetInIndex].value,
+        100_000_000n * 10n ** this.state.decimals[assetInIndex].value,
       ),
       rates: this.state.rates,
     };

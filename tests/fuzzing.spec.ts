@@ -64,9 +64,9 @@ describe('Pool fuzzing tests', () => {
     // Initial deposit to bootstrap the pool
     const initialDeposit: SimulateDepositParams = {
       depositAmounts: Allocation.createAllocations([
-        { asset: state.decimals[0].asset, value: 1000n * 10n ** 18n },
-        { asset: state.decimals[1].asset, value: 1000n * 10n ** 18n },
-        { asset: state.decimals[2].asset, value: 1000n * 10n ** 18n },
+        { asset: state.decimals[0].asset, value: 1_000_000_000n * 10n ** state.decimals[0].value },
+        { asset: state.decimals[1].asset, value: 1_000_000_000n * 10n ** state.decimals[1].value },
+        { asset: state.decimals[2].asset, value: 1_000_000_000n * 10n ** state.decimals[2].value },
       ]),
       rates: state.rates,
     };
@@ -108,7 +108,6 @@ describe('Pool fuzzing tests', () => {
               2,
             );
 
-            console.error('Operation history:', historyJson);
             await writeFile(`fuzzing-failure-${Date.now()}.json`, historyJson);
 
             throw new Error(`Virtual price decreased from ${lastVirtualPrice} to ${newVirtualPrice}`);
