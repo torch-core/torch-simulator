@@ -24,6 +24,7 @@ export interface Operation {
   type: OperationType;
   params: SimulateDepositParams | SimulateWithdrawParams | SimulateSwapExactInParams | SimulateSwapExactOutParams;
   virtualPrice: string;
+  state: SimulatorState;
 }
 
 export abstract class BaseFuzzer {
@@ -78,6 +79,7 @@ export abstract class BaseFuzzer {
       type: OperationType.DEPOSIT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
+      state: this.state,
     };
     this.operationHistory.push(operation);
     return operation;
@@ -113,6 +115,7 @@ export abstract class BaseFuzzer {
       type: OperationType.WITHDRAW,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
+      state: this.state,
     };
     this.operationHistory.push(operation);
     return operation;
@@ -140,6 +143,7 @@ export abstract class BaseFuzzer {
       type: OperationType.SWAP_EXACT_IN,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
+      state: this.state,
     };
     this.operationHistory.push(operation);
     return operation;
@@ -171,6 +175,7 @@ export abstract class BaseFuzzer {
       type: OperationType.SWAP_EXACT_OUT,
       params,
       virtualPrice: this.getVirtualPrice().toString(),
+      state: this.state,
     };
     this.operationHistory.push(operation);
     return operation;

@@ -90,6 +90,10 @@ describe('Pool fuzzing tests', () => {
       ]),
       rates: state.rates,
     };
+    console.log(
+      'Initial deposit:',
+      initialDeposit.depositAmounts.map((a) => `${Number(a.value) / 10 ** 9} ${getAssetSymbol(a.asset)}`),
+    );
     fuzzer.deposit(initialDeposit);
   });
 
@@ -103,6 +107,7 @@ describe('Pool fuzzing tests', () => {
 
         let operation: Operation | undefined;
 
+        console.log('Operation type:', OperationType.values[operationType]);
         switch (OperationType.values[operationType]) {
           case OperationType.DEPOSIT:
             operation = fuzzer.performRandomDeposit();
@@ -183,7 +188,7 @@ describe('Pool fuzzing tests', () => {
   });
 
   it('should reproduce operations from history file', async () => {
-    const historyFile = process.env.HISTORY_FILE;
+    const historyFile = 'tests/report/failures/failure-1740304774149.json';
     if (!historyFile) {
       console.log('Skipping reproduction test - no HISTORY_FILE specified');
       return;
