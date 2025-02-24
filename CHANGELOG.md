@@ -1,5 +1,12 @@
 # @torch-finance/simulator
 
+## 0.4.0
+
+### Minor Changes
+
+- 1d0f4fb: - Update the deposit algorithm
+  - When an error occurs during the simulation process, the state will be rolled back.
+
 ## 0.3.5
 
 ### Patch Changes
