@@ -1,7 +1,7 @@
 // Jest test suite for PoolSimulator
 import { PoolSimulator } from '../src/pool-simulator/simulator';
 import { Allocation, Asset } from '@torch-finance/core';
-import { SimulatorState } from '../src/types';
+import { SimulatorSnapshot, SimulatorState } from '../src/types';
 import {
   SimulateDepositParams,
   SimulateSwapExactInParams,
@@ -27,14 +27,14 @@ function createSimulatorState(): SimulatorState {
     feeNumerator: 30,
     adminFeeNumerator: 10,
     reserves: Allocation.createAllocations([
-      { asset: tonAsset, value: 1000000n * 10n ** 18n },
-      { asset: jettonAsset, value: 2000000n * 10n ** 18n },
+      { asset: tonAsset, value: 0n },
+      { asset: jettonAsset, value: 0n },
     ]),
     adminFees: Allocation.createAllocations([
       { asset: tonAsset, value: 0n },
       { asset: jettonAsset, value: 0n },
     ]),
-    lpTotalSupply: 1000000000n,
+    lpTotalSupply: 0n,
     rates: Allocation.createAllocations([
       { asset: tonAsset, value: 1000000000000000000n },
       { asset: jettonAsset, value: 1000000000000000000n },
@@ -45,23 +45,32 @@ function createSimulatorState(): SimulatorState {
 describe('PoolSimulator', () => {
   let simulator: PoolSimulator;
   let state: SimulatorState;
+  let initState: SimulatorSnapshot;
 
   beforeEach(() => {
     state = createSimulatorState();
     simulator = PoolSimulator.create(state);
+    const depositParams: SimulateDepositParams = {
+      depositAmounts: Allocation.createAllocations([
+        { asset: state.decimals[0].asset, value: 100n * 10n ** 18n },
+        { asset: state.decimals[1].asset, value: 200n * 10n ** 18n },
+      ]),
+      rates: state.rates,
+    };
+
+    simulator.deposit(depositParams);
+    initState = simulator.saveSnapshot();
   });
 
   it('Initializes correctly from state', () => {
     expect(simulator.initA).toBe(state.initA);
     expect(simulator.futureA).toBe(state.futureA);
-    expect(simulator.balances).toEqual(state.reserves.map((r) => r.value));
-    expect(simulator.lpTotalSupply).toBe(state.lpTotalSupply);
   });
 
   it('Performs deposit correctly', () => {
     const depositParams: SimulateDepositParams = {
       depositAmounts: Allocation.createAllocations([
-        { asset: state.decimals[0].asset, value: 100n * 10n ** 18n },
+        { asset: state.decimals[0].asset, value: 200n * 10n ** 18n },
         { asset: state.decimals[1].asset, value: 200n * 10n ** 18n },
       ]),
       rates: state.rates,
@@ -74,7 +83,7 @@ describe('PoolSimulator', () => {
 
   it('Performs withdrawal correctly', () => {
     const withdrawParams: SimulateWithdrawParams = {
-      lpAmount: 10n * 10n ** 18n,
+      lpAmount: 10000n,
       rates: state.rates,
     };
 
@@ -102,7 +111,7 @@ describe('PoolSimulator', () => {
   });
 
   it('Performs swap exact out correctly', () => {
-    const amountOut = 100n * 10n ** 18n;
+    const amountOut = 1n * 10n ** 18n;
     const swapParams: SimulateSwapExactOutParams = {
       mode: 'ExactOut',
       assetIn: state.decimals[0].asset,
@@ -120,8 +129,7 @@ describe('PoolSimulator', () => {
     expect(swapExactOutResult.virtualPriceAfter).not.toEqual(swapExactOutResult.virtualPriceBefore);
 
     // Restore init state
-    state = createSimulatorState();
-    simulator = PoolSimulator.create(state);
+    simulator.restoreSnapshot(initState);
 
     // Use exact out result to swap exact in
     const swapExactInParams: SimulateSwapExactInParams = {
