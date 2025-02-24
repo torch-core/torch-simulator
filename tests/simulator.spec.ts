@@ -1,14 +1,13 @@
 // Jest test suite for PoolSimulator
 import { PoolSimulator } from '../src/pool-simulator/simulator';
 import { Allocation, Asset } from '@torch-finance/core';
-import { SimulatorState } from '../src/types';
+import { SimulatorSnapshot, SimulatorState } from '../src/types';
 import {
   SimulateDepositParams,
   SimulateSwapExactInParams,
   SimulateSwapExactOutParams,
   SimulateWithdrawParams,
 } from '@torch-finance/dex-contract-wrapper';
-import { SimulatorSnapshot } from '../dist';
 
 // Helper function to create a new SimulatorState
 function createSimulatorState(): SimulatorState {
