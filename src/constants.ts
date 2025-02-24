@@ -5,3 +5,4 @@ export const MAX_ITERATIONS = 255;
 export const MIN_RAMP_TIME = 86400;
 export const MAX_A_CHANGE = 10n;
 export const MAX_A = 1000000;
+export const MUL_PRECISION = 10n ** 36n;

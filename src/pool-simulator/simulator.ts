@@ -8,6 +8,7 @@ import {
   MIN_RAMP_TIME,
   MAX_A,
   MAX_A_CHANGE,
+  MUL_PRECISION,
 } from '../constants';
 import { IPoolSimulator } from '../interfaces';
 import {
@@ -228,7 +229,6 @@ export class PoolSimulator implements IPoolSimulator {
     const _rates = this.rates;
     const totalSupply = this.lpTotalSupply;
     const vpBefore = this.getVirtualPrice();
-
     // Initial invariant
     let d0 = 0n;
     const oldBalances = this.balances.slice();
@@ -237,25 +237,28 @@ export class PoolSimulator implements IPoolSimulator {
       d0 = this.getDMem(oldBalances, _rates, this.getA());
     }
     const newBalances = oldBalances.slice();
-
     for (let i = 0; i < this.poolAssetCount; i++) {
       newBalances[i] += amounts[i];
+    }
+    let invRateSum = 0n;
+    for (let i = 0; i < this.poolAssetCount; i++) {
+      invRateSum += (MUL_PRECISION * PRECISION) / (_rates[i] * 10n ** BigInt(this.decimals[i]));
     }
     const d1 = this.getDMem(newBalances, _rates, this.getA());
     let d2 = d1;
     if (totalSupply > 0n) {
       const fees = Array<bigint>(this.poolAssetCount).fill(0n);
       for (let i = 0; i < this.poolAssetCount; i++) {
-        const idealBalance = (d1 * oldBalances[i]) / d0;
-        const difference =
-          idealBalance > newBalances[i] ? idealBalance - newBalances[i] : newBalances[i] - idealBalance;
+        const invRate = (MUL_PRECISION * PRECISION) / (_rates[i] * 10n ** BigInt(this.decimals[i]));
+        const idealBalance = (d1 * invRate) / invRateSum / (PRECISION / 10n ** BigInt(this.decimals[i]));
+        const needed = idealBalance > oldBalances[i] ? idealBalance - oldBalances[i] : 0n;
+        const difference = amounts[i] - (amounts[i] < needed ? amounts[i] : needed);
         fees[i] = (_fee * difference) / FEE_DENOMINATOR;
         const admin_fee = (fees[i] * _adminFee) / FEE_DENOMINATOR;
         this.balances[i] = newBalances[i] - admin_fee;
         this.adminFees[i] += admin_fee;
         newBalances[i] -= fees[i];
       }
-
       d2 = this.getDMem(newBalances, _rates, this.getA());
     } else {
       this.balances = newBalances;
@@ -269,7 +272,6 @@ export class PoolSimulator implements IPoolSimulator {
     }
     this.lpTotalSupply = totalSupply + lpAmount;
     const vpAfter = this.getVirtualPrice();
-
     return {
       lpTokenOut: lpAmount,
       virtualPriceBefore: vpBefore,
